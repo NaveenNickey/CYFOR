@@ -68,7 +68,7 @@ As described in the project report, the system is designed to assist cybersecuri
 ![MIME](https://github.com/NaveenNickey/CYFOR/blob/31b02dae634a2e745d524a7a5bfa3ef695ff42eb/Cyber_Forensic_Project/Screenshots/Screenshot%202026-04-03%20221603.png)
 
 ### 🔹 Hex Viewer
-![Hex Viewer](screenshots/hex_viewer.png)
+![Hex Viewer](https://github.com/NaveenNickey/CYFOR/blob/bd59bd9b44aedcaf7d73d6eae143d6310a142a62/Cyber_Forensic_Project/Screenshots/Screenshot%202026-04-03%20221734.png)
 
 ### 🔹 Steganography Detection
 ![Stego](https://github.com/NaveenNickey/CYFOR/blob/4190ac369f59f08f339bd64dbf08646f76a8c39b/Cyber_Forensic_Project/Screenshots/Screenshot%202026-04-03%20221642.png)
