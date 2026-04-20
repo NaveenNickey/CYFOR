@@ -74,7 +74,11 @@ As described in the project report, the system is designed to assist cybersecuri
 ![Stego](https://github.com/NaveenNickey/CYFOR/blob/4190ac369f59f08f339bd64dbf08646f76a8c39b/Cyber_Forensic_Project/Screenshots/Screenshot%202026-04-03%20221642.png)
 
 ### 🔹 Report Generation
-![Report](screenshots/report.png)
+![Report](https://github.com/NaveenNickey/CYFOR/blob/9b2ff0d52f85cec38b1f2e3582db6f3c9c124f10/Cyber_Forensic_Project/Screenshots/Screenshot%202026-04-03%20222008.png)
+
+### 🔹 MetaData Extracter
+![Stego]()
+
 ---
 
 ## 🎯 Applications
