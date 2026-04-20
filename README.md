@@ -61,8 +61,23 @@ As described in the project report, the system is designed to assist cybersecuri
 
 ## 📸 Screenshots
 
-> Add your UI screenshots here (Dashboard, Hash Output, Hex Viewer, Report, etc.)
+### 🔹 Dashboard
+![Dashboard](screenshots/dashboard.png)
 
+### 🔹 Hash Output
+![Hash Output](screenshots/hash_output.png)
+
+### 🔹 MIME Type Detection
+![MIME](screenshots/mime_output.png)
+
+### 🔹 Hex Viewer
+![Hex Viewer](screenshots/hex_viewer.png)
+
+### 🔹 Steganography Detection
+![Stego](screenshots/stego_result.png)
+
+### 🔹 Report Generation
+![Report](screenshots/report.png)
 ---
 
 ## 🎯 Applications
