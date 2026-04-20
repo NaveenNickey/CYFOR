@@ -65,7 +65,7 @@ As described in the project report, the system is designed to assist cybersecuri
 ![Dashboard](screenshots/dashboard.png)
 
 ### 🔹 Hash Output
-![Hash Output](screenshots/hash_output.png)
+![Hash Output](https://github.com/NaveenNickey/CYFOR/blob/b7e03daf073451ff42c2995408ee30984b9b2475/Cyber_Forensic_Project/Screenshots/Screenshot%202026-04-03%20221543.png)
 
 ### 🔹 MIME Type Detection
 ![MIME](screenshots/mime_output.png)
