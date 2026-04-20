@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block header_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- ============================================================
+     PAGE HEADER
+============================================================ -->
+<div class="page-header">
+  <h1 class="page-title">
+    <span class="page-title-icon">◈</span>
+    Forensic Analysis Workstation
+  </h1>
+  <p class="page-subtitle">Select a module to begin your forensic investigation</p>
+</div>
+
+<!-- ============================================================
+     MODULES GRID - 2x3 Layout
+============================================================ -->
+<div class="modules-grid">
+
+  <!-- MODULE: Integrity Hash Check -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-card-icon">⬗</div>
+      <div>
+        <h3 class="module-card-title">Integrity Check</h3>
+        <p class="module-card-desc">Verify file authenticity with cryptographic hashes</p>
+      </div>
+    </div>
+    <p class="module-card-desc">Compute SHA-256, MD5 checksums and validate MIME types against declared formats.</p>
+    <a href="{{ url_for('integrity') }}" class="btn btn-primary module-card-btn">
+      Launch Module →
+    </a>
+  </div>
+
+  <!-- MODULE: Image Forensics -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-card-icon">◉</div>
+      <div>
+        <h3 class="module-card-title">Image Forensics</h3>
+        <p class="module-card-desc">Detect steganography and extract metadata</p>
+      </div>
+    </div>
+    <p class="module-card-desc">Analyze images for LSB steganography, extract EXIF data including GPS coordinates and timestamps.</p>
+    <a href="{{ url_for('image_forensics') }}" class="btn btn-primary module-card-btn">
+      Launch Module →
+    </a>
+  </div>
+
+  <!-- MODULE: Hex Viewer -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-card-icon">▣</div>
+      <div>
+        <h3 class="module-card-title">Hex Viewer</h3>
+        <p class="module-card-desc">Low-level binary data inspection</p>
+      </div>
+    </div>
+    <p class="module-card-desc">View raw hex dumps, analyze byte patterns, and extract readable strings from binary files.</p>
+    <a href="{{ url_for('hex_viewer') }}" class="btn btn-primary module-card-btn">
+      Launch Module →
+    </a>
+  </div>
+
+  <!-- MODULE: Artifact Scanner -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-card-icon">◫</div>
+      <div>
+        <h3 class="module-card-title">Artifact Scanner</h3>
+        <p class="module-card-desc">System artifact discovery and analysis</p>
+      </div>
+    </div>
+    <p class="module-card-desc">Scan directories for forensic artifacts, identify hidden files, and assess risk levels.</p>
+    <a href="{{ url_for('artifact_scanner') }}" class="btn btn-primary module-card-btn">
+      Launch Module →
+    </a>
+  </div>
+
+  <!-- MODULE: Keyword Search -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-card-icon">⌖</div>
+      <div>
+        <h3 class="module-card-title">Keyword Search</h3>
+        <p class="module-card-desc">Pattern matching and keyword extraction</p>
+      </div>
+    </div>
+    <p class="module-card-desc">Search files for sensitive patterns: credit cards, emails, IPs, SSNs, API keys, and custom keywords.</p>
+    <a href="{{ url_for('keyword_search') }}" class="btn btn-primary module-card-btn">
+      Launch Module →
+    </a>
+  </div>
+
+  <!-- MODULE: Report Generator -->
+  <div class="module-card">
+    <div class="module-card-header">
+      <div class="module-card-icon">📄</div>
+      <div>
+        <h3 class="module-card-title">Generate Report</h3>
+        <p class="module-card-desc">Automated forensic report compilation</p>
+      </div>
+    </div>
+    <p class="module-card-desc">Compile findings from all modules into a professional forensic report with PDF export.</p>
+    <a href="{{ url_for('report') }}" class="btn btn-primary module-card-btn">
+      Launch Module →
+    </a>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     SYSTEM STATUS PANEL
+============================================================ -->
+<div class="status-panel">
+  <h2 class="card-title" style="margin-bottom: 1.5rem;">SYSTEM STATUS</h2>
+  <div class="status-grid">
+    <div class="status-item">
+      <div class="status-value">0</div>
+      <div class="status-label">Files Analyzed</div>
+    </div>
+    <div class="status-item">
+      <div class="status-value">0</div>
+      <div class="status-label">Threats Detected</div>
+    </div>
+    <div class="status-item">
+      <div class="status-value">0</div>
+      <div class="status-label">Reports Generated</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

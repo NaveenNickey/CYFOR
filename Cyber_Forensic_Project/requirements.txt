@@ -1,0 +1,17 @@
+# CYFOR - Cyber Forensic Workstation
+# Python Dependencies
+# Compatible with Python 3.14 on Windows
+
+# Web Framework
+flask
+
+# Image Processing
+Pillow
+opencv-python
+numpy
+
+# File Type Detection (pure Python, Windows-compatible)
+filetype
+
+# PDF Report Generation
+reportlab

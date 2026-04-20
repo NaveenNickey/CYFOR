@@ -1,0 +1,1197 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Report{% endblock %}
+
+{% block header_title %}Generate Report{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ============================================
+   REPORT GENERATOR - FORENSIC THEME
+   Black background with green accents
+============================================ */
+
+/* Case Information Panel */
+.case-panel {
+  background: linear-gradient(135deg, #0a0a0a 0%, #111 100%);
+  border: 1px solid #00ff41;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+}
+
+.panel-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #00ff41;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.panel-title::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: #00ff41;
+  border-radius: 2px;
+}
+
+/* Form Elements */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #888;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 0.875rem 1rem;
+  color: #e0e0e0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #00ff41;
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #555;
+}
+
+/* Module Selection Panel */
+.modules-panel {
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.module-card {
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.module-card:hover {
+  border-color: #00ff41;
+}
+
+.module-card.disabled {
+  opacity: 0.5;
+}
+
+.module-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 255, 65, 0.1);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.module-info {
+  flex: 1;
+}
+
+.module-name {
+  font-weight: 600;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+}
+
+.module-status {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.module-status.available {
+  color: #00ff41;
+}
+
+.module-status.unavailable {
+  color: #666;
+}
+
+/* Toggle Switch */
+.switch-wrapper {
+  position: relative;
+  width: 48px;
+  height: 24px;
+}
+
+.switch-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #333;
+  border-radius: 24px;
+  transition: 0.3s;
+}
+
+.switch-slider::before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: #888;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.switch-input:checked + .switch-slider {
+  background: rgba(0, 255, 65, 0.2);
+}
+
+.switch-input:checked + .switch-slider::before {
+  transform: translateX(24px);
+  background: #00ff41;
+}
+
+.switch-input:disabled + .switch-slider {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Module Actions */
+.module-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-small {
+  padding: 0.5rem 1rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #888;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-small:hover {
+  border-color: #00ff41;
+  color: #00ff41;
+}
+
+/* Report Preview Panel */
+.preview-panel {
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.preview-document {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  color: #333;
+  font-family: 'Helvetica', 'Arial', sans-serif;
+}
+
+.preview-header {
+  text-align: center;
+  border-bottom: 2px solid #0a0e17;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.preview-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0a0e17;
+  margin-bottom: 0.5rem;
+}
+
+.preview-subtitle {
+  font-size: 0.8rem;
+  color: #00a050;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.preview-case-info {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.preview-case-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.375rem 0;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #eee;
+}
+
+.preview-case-row:last-child {
+  border-bottom: none;
+}
+
+.preview-label {
+  font-weight: 600;
+  color: #555;
+}
+
+.preview-value {
+  color: #333;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.preview-modules {
+  margin-top: 1rem;
+}
+
+.preview-modules-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0a0e17;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.preview-module-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.preview-module-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.preview-module-item.included {
+  color: #333;
+}
+
+.preview-module-item.included::before {
+  content: '✓';
+  color: #00a050;
+  font-weight: bold;
+}
+
+.preview-module-item.excluded::before {
+  content: '○';
+  color: #999;
+}
+
+/* Generate Button with Glow */
+.btn-generate {
+  position: relative;
+  width: 100%;
+  padding: 1.25rem 2rem;
+  background: linear-gradient(135deg, #00cc33 0%, #00ff41 100%);
+  border: none;
+  border-radius: 6px;
+  color: #000;
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  overflow: hidden;
+  animation: greenGlow 2s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+@keyframes greenGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(0, 255, 65, 0.5),
+                0 0 10px rgba(0, 255, 65, 0.3),
+                0 0 20px rgba(0, 255, 65, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.8),
+                0 0 20px rgba(0, 255, 65, 0.5),
+                0 0 40px rgba(0, 255, 65, 0.3);
+  }
+}
+
+.btn-generate:hover {
+  background: linear-gradient(135deg, #00ff41 0%, #00ff66 100%);
+  transform: translateY(-1px);
+}
+
+.btn-generate:disabled {
+  background: #333;
+  color: #666;
+  cursor: not-allowed;
+  animation: none;
+  box-shadow: none;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.loading-overlay.visible {
+  display: flex;
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 3px solid #333;
+  border-top-color: #00ff41;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  color: #00ff41;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.loading-subtext {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+/* History Panel */
+.history-panel {
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+.history-info {
+  flex: 1;
+}
+
+.history-name {
+  font-weight: 600;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.history-meta {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.history-modules {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.history-module-badge {
+  padding: 0.2rem 0.4rem;
+  background: rgba(0, 255, 65, 0.1);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  border-radius: 3px;
+  font-size: 0.65rem;
+  color: #00ff41;
+  text-transform: uppercase;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #555;
+  font-style: italic;
+}
+
+/* Tips Panel */
+.tips-panel {
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.tips-accordion {
+  margin-top: 1rem;
+}
+
+.tip-item {
+  border-bottom: 1px solid #222;
+}
+
+.tip-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  cursor: pointer;
+  color: #888;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.tip-header:hover {
+  color: #00ff41;
+}
+
+.tip-icon {
+  font-size: 0.75rem;
+  transition: transform 0.2s ease;
+}
+
+.tip-item.expanded .tip-icon {
+  transform: rotate(90deg);
+}
+
+.tip-content {
+  display: none;
+  padding: 0 0 1rem 1.5rem;
+  color: #aaa;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.tip-item.expanded .tip-content {
+  display: block;
+}
+
+/* Error Panel */
+.error-panel {
+  background: rgba(255, 77, 77, 0.1);
+  border: 1px solid #ff4d4d;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: none;
+}
+
+.error-panel.visible {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.error-icon {
+  font-size: 1.25rem;
+}
+
+.error-message {
+  color: #ff6b6b;
+  font-size: 0.9rem;
+}
+
+/* Two Column Layout */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ============================================================
+     PAGE HEADER
+============================================================ -->
+<div class="page-header">
+  <h1 class="page-title">
+    <span class="page-title-icon">📄</span>
+    Automated Report Generator
+  </h1>
+  <p class="page-subtitle">Compile forensic findings into a professional PDF report</p>
+</div>
+
+<!-- ============================================================
+     ERROR PANEL
+============================================================ -->
+<div class="error-panel" id="errorPanel">
+  <span class="error-icon">⚠</span>
+  <span class="error-message" id="errorMessage"></span>
+</div>
+
+<!-- ============================================================
+     CASE INFORMATION PANEL
+============================================================ -->
+<div class="case-panel">
+  <div class="panel-title">Case Information</div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label" for="caseId">Case ID</label>
+      <input type="text" class="form-input" id="caseId" placeholder="e.g., CASE-2026-001">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="investigator">Investigator Name</label>
+      <input type="text" class="form-input" id="investigator" placeholder="Enter your name">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label" for="institution">Institution</label>
+    <input type="text" class="form-input" id="institution" value="JNN Institute of Engineering">
+  </div>
+
+  <div class="form-group">
+    <label class="form-label" for="notes">Investigation Notes</label>
+    <textarea class="form-textarea" id="notes" placeholder="Enter any relevant notes about the investigation..."></textarea>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODULE SELECTION PANEL
+============================================================ -->
+<div class="modules-panel">
+  <div class="panel-title">Select Modules to Include in Report</div>
+
+  <div class="modules-grid" id="modulesGrid">
+    <!-- Integrity Module -->
+    <div class="module-card" id="moduleIntegrity" data-module="integrity">
+      <div class="module-icon">⬗</div>
+      <div class="module-info">
+        <div class="module-name">File Integrity</div>
+        <div class="module-status unavailable" id="statusIntegrity">Checking...</div>
+      </div>
+      <div class="switch-wrapper">
+        <input type="checkbox" class="switch-input" id="toggleIntegrity" data-module="integrity">
+        <span class="switch-slider"></span>
+      </div>
+    </div>
+
+    <!-- Image Forensics Module -->
+    <div class="module-card" id="moduleImage" data-module="image">
+      <div class="module-icon">◉</div>
+      <div class="module-info">
+        <div class="module-name">Image Forensics</div>
+        <div class="module-status unavailable" id="statusImage">Checking...</div>
+      </div>
+      <div class="switch-wrapper">
+        <input type="checkbox" class="switch-input" id="toggleImage" data-module="image">
+        <span class="switch-slider"></span>
+      </div>
+    </div>
+
+    <!-- Hex Viewer Module -->
+    <div class="module-card" id="moduleHex" data-module="hex">
+      <div class="module-icon">▣</div>
+      <div class="module-info">
+        <div class="module-name">Hex Viewer</div>
+        <div class="module-status unavailable" id="statusHex">Checking...</div>
+      </div>
+      <div class="switch-wrapper">
+        <input type="checkbox" class="switch-input" id="toggleHex" data-module="hex">
+        <span class="switch-slider"></span>
+      </div>
+    </div>
+
+    <!-- Artifact Scanner Module -->
+    <div class="module-card" id="moduleArtifact" data-module="artifact">
+      <div class="module-icon">◫</div>
+      <div class="module-info">
+        <div class="module-name">Artifact Scanner</div>
+        <div class="module-status unavailable" id="statusArtifact">Checking...</div>
+      </div>
+      <div class="switch-wrapper">
+        <input type="checkbox" class="switch-input" id="toggleArtifact" data-module="artifact">
+        <span class="switch-slider"></span>
+      </div>
+    </div>
+
+    <!-- Keyword Search Module -->
+    <div class="module-card" id="moduleKeyword" data-module="keyword">
+      <div class="module-icon">⌖</div>
+      <div class="module-info">
+        <div class="module-name">Keyword Search</div>
+        <div class="module-status unavailable" id="statusKeyword">Checking...</div>
+      </div>
+      <div class="switch-wrapper">
+        <input type="checkbox" class="switch-input" id="toggleKeyword" data-module="keyword">
+        <span class="switch-slider"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="module-actions">
+    <button class="btn-small" id="selectAllBtn">Select All Available</button>
+    <button class="btn-small" id="deselectAllBtn">Deselect All</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     REPORT PREVIEW PANEL
+============================================================ -->
+<div class="preview-panel">
+  <div class="panel-title">Report Preview</div>
+
+  <div class="preview-document" id="previewDocument">
+    <div class="preview-header">
+      <div class="preview-title">CYFOR FORENSIC INVESTIGATION REPORT</div>
+      <div class="preview-subtitle">CONFIDENTIAL — FOR AUTHORIZED PERSONNEL ONLY</div>
+    </div>
+
+    <div class="preview-case-info">
+      <div class="preview-case-row">
+        <span class="preview-label">Case ID:</span>
+        <span class="preview-value" id="previewCaseId">-</span>
+      </div>
+      <div class="preview-case-row">
+        <span class="preview-label">Investigator:</span>
+        <span class="preview-value" id="previewInvestigator">-</span>
+      </div>
+      <div class="preview-case-row">
+        <span class="preview-label">Institution:</span>
+        <span class="preview-value" id="previewInstitution">-</span>
+      </div>
+      <div class="preview-case-row">
+        <span class="preview-label">Generated:</span>
+        <span class="preview-value" id="previewDate">-</span>
+      </div>
+    </div>
+
+    <div class="preview-modules">
+      <div class="preview-modules-title">Modules Included:</div>
+      <ul class="preview-module-list" id="previewModuleList">
+        <li class="preview-module-item excluded">File Integrity Check</li>
+        <li class="preview-module-item excluded">Image Forensics</li>
+        <li class="preview-module-item excluded">Hex Viewer Analysis</li>
+        <li class="preview-module-item excluded">Artifact Scanner</li>
+        <li class="preview-module-item excluded">Keyword Search</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     GENERATE BUTTON
+============================================================ -->
+<button class="btn-generate" id="generateBtn">
+  <span>⚡</span>
+  GENERATE & DOWNLOAD PDF
+</button>
+
+<!-- ============================================================
+     LOADING OVERLAY
+============================================================ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">Compiling forensic findings...</div>
+  <div class="loading-subtext" id="loadingSubtext">Please wait</div>
+</div>
+
+<!-- ============================================================
+     REPORT HISTORY PANEL
+============================================================ -->
+<div class="history-panel">
+  <div class="panel-title">Report History (Last 5)</div>
+
+  <ul class="history-list" id="historyList">
+    <li class="history-empty">No reports generated yet in this session</li>
+  </ul>
+</div>
+
+<!-- ============================================================
+     TIPS PANEL
+============================================================ -->
+<div class="tips-panel">
+  <div class="panel-title">Forensic Report Best Practices</div>
+
+  <div class="tips-accordion">
+    <div class="tip-item expanded">
+      <div class="tip-header">
+        <span class="tip-icon">▸</span>
+        <span>Always include a Case ID for chain of custody</span>
+      </div>
+      <div class="tip-content">
+        A unique Case ID ensures proper tracking of evidence throughout the investigation lifecycle.
+        It should follow your organization's naming convention and be referenced in all documentation.
+      </div>
+    </div>
+
+    <div class="tip-item">
+      <div class="tip-header">
+        <span class="tip-icon">▸</span>
+        <span>Document all findings even if inconclusive</span>
+      </div>
+      <div class="tip-content">
+        Negative results and inconclusive findings are just as important as positive results.
+        They demonstrate thoroughness and help establish what was ruled out during the investigation.
+      </div>
+    </div>
+
+    <div class="tip-item">
+      <div class="tip-header">
+        <span class="tip-icon">▸</span>
+        <span>SHA-256 is the gold standard for file integrity</span>
+      </div>
+      <div class="tip-content">
+        While MD5 and SHA-1 are included for legacy compatibility, SHA-256 is currently the
+        recommended standard for cryptographic hashing in forensic analysis due to its collision resistance.
+      </div>
+    </div>
+
+    <div class="tip-item">
+      <div class="tip-header">
+        <span class="tip-icon">▸</span>
+        <span>Include investigator credentials in every report</span>
+      </div>
+      <div class="tip-content">
+        The investigator's name and institution should be clearly documented to establish accountability
+        and provide contact information for follow-up questions or legal proceedings.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // MODULE DATA TRACKING
+  // ============================================================
+  const modules = {
+    integrity: { name: 'File Integrity', data: null, available: false },
+    image: { name: 'Image Forensics', data: null, available: false },
+    hex: { name: 'Hex Viewer', data: null, available: false },
+    artifact: { name: 'Artifact Scanner', data: null, available: false },
+    keyword: { name: 'Keyword Search', data: null, available: false }
+  };
+
+  // ============================================================
+  // INITIALIZE - Check localStorage for cached results
+  // ============================================================
+  function initializeModules() {
+    Object.keys(modules).forEach(moduleKey => {
+      const cached = localStorage.getItem(`cyfor_${moduleKey}`);
+      if (cached) {
+        try {
+          modules[moduleKey].data = JSON.parse(cached);
+          modules[moduleKey].available = true;
+          updateModuleStatus(moduleKey, true);
+        } catch (e) {
+          console.error(`Error parsing cached ${moduleKey} data:`, e);
+        }
+      } else {
+        updateModuleStatus(moduleKey, false);
+      }
+    });
+
+    updatePreview();
+  }
+
+  function updateModuleStatus(moduleKey, available) {
+    const statusEl = document.getElementById(`status${moduleKey.charAt(0).toUpperCase() + moduleKey.slice(1)}`);
+    const cardEl = document.getElementById(`module${moduleKey.charAt(0).toUpperCase() + moduleKey.slice(1)}`);
+    const toggleEl = document.getElementById(`toggle${moduleKey.charAt(0).toUpperCase() + moduleKey.slice(1)}`);
+
+    if (available) {
+      statusEl.textContent = 'DATA AVAILABLE';
+      statusEl.classList.remove('unavailable');
+      statusEl.classList.add('available');
+      cardEl.classList.remove('disabled');
+      toggleEl.disabled = false;
+    } else {
+      statusEl.textContent = 'NO DATA';
+      statusEl.classList.remove('available');
+      statusEl.classList.add('unavailable');
+      cardEl.classList.add('disabled');
+      toggleEl.disabled = true;
+      toggleEl.checked = false;
+    }
+  }
+
+  // ============================================================
+  // DEFAULT CASE ID GENERATION
+  // ============================================================
+  function generateDefaultCaseId() {
+    const date = new Date();
+    const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
+    return `CASE-${dateStr}-001`;
+  }
+
+  // Set default case ID
+  const caseIdInput = document.getElementById('caseId');
+  if (!caseIdInput.value) {
+    caseIdInput.value = generateDefaultCaseId();
+  }
+
+  // ============================================================
+  // PREVIEW UPDATES
+  // ============================================================
+  function updatePreview() {
+    const caseId = document.getElementById('caseId').value || '-';
+    const investigator = document.getElementById('investigator').value || '-';
+    const institution = document.getElementById('institution').value || '-';
+    const now = new Date().toLocaleString();
+
+    document.getElementById('previewCaseId').textContent = caseId;
+    document.getElementById('previewInvestigator').textContent = investigator;
+    document.getElementById('previewInstitution').textContent = institution;
+    document.getElementById('previewDate').textContent = now;
+
+    // Update module list
+    const moduleList = document.getElementById('previewModuleList');
+    moduleList.innerHTML = '';
+
+    const moduleOrder = ['integrity', 'image', 'hex', 'artifact', 'keyword'];
+    const moduleDisplayNames = {
+      integrity: 'File Integrity Check',
+      image: 'Image Forensics',
+      hex: 'Hex Viewer Analysis',
+      artifact: 'Artifact Scanner',
+      keyword: 'Keyword Search'
+    };
+
+    moduleOrder.forEach(key => {
+      const toggle = document.getElementById(`toggle${key.charAt(0).toUpperCase() + key.slice(1)}`);
+      const isIncluded = toggle && toggle.checked;
+      const li = document.createElement('li');
+      li.className = `preview-module-item ${isIncluded ? 'included' : 'excluded'}`;
+      li.textContent = moduleDisplayNames[key];
+      moduleList.appendChild(li);
+    });
+  }
+
+  // Update preview on input changes
+  ['caseId', 'investigator', 'institution', 'notes'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updatePreview);
+  });
+
+  // Update preview on toggle changes
+  Object.keys(modules).forEach(key => {
+    const toggle = document.getElementById(`toggle${key.charAt(0).toUpperCase() + key.slice(1)}`);
+    if (toggle) {
+      toggle.addEventListener('change', updatePreview);
+    }
+  });
+
+  // ============================================================
+  // SELECT / DESELECT ALL BUTTONS
+  // ============================================================
+  document.getElementById('selectAllBtn').addEventListener('click', () => {
+    Object.keys(modules).forEach(key => {
+      if (modules[key].available) {
+        const toggle = document.getElementById(`toggle${key.charAt(0).toUpperCase() + key.slice(1)}`);
+        if (toggle && !toggle.disabled) {
+          toggle.checked = true;
+        }
+      }
+    });
+    updatePreview();
+  });
+
+  document.getElementById('deselectAllBtn').addEventListener('click', () => {
+    Object.keys(modules).forEach(key => {
+      const toggle = document.getElementById(`toggle${key.charAt(0).toUpperCase() + key.slice(1)}`);
+      if (toggle) {
+        toggle.checked = false;
+      }
+    });
+    updatePreview();
+  });
+
+  // ============================================================
+  // TIPS ACCORDION
+  // ============================================================
+  document.querySelectorAll('.tip-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const tipItem = header.parentElement;
+      tipItem.classList.toggle('expanded');
+    });
+  });
+
+  // ============================================================
+  // REPORT HISTORY
+  // ============================================================
+  function loadReportHistory() {
+    const history = JSON.parse(localStorage.getItem('cyfor_report_history') || '[]');
+    const historyList = document.getElementById('historyList');
+
+    if (history.length === 0) {
+      historyList.innerHTML = '<li class="history-empty">No reports generated yet in this session</li>';
+      return;
+    }
+
+    historyList.innerHTML = '';
+    history.slice(0, 5).forEach(report => {
+      const li = document.createElement('li');
+      li.className = 'history-item';
+
+      const moduleBadges = report.modules.map(m =>
+        `<span class="history-module-badge">${m}</span>`
+      ).join('');
+
+      li.innerHTML = `
+        <div class="history-info">
+          <div class="history-name">${report.caseId}</div>
+          <div class="history-meta">${report.date}</div>
+        </div>
+        <div class="history-modules">${moduleBadges}</div>
+      `;
+      historyList.appendChild(li);
+    });
+  }
+
+  function addToHistory(caseId, modulesList) {
+    const history = JSON.parse(localStorage.getItem('cyfor_report_history') || '[]');
+    history.unshift({
+      caseId: caseId,
+      date: new Date().toLocaleString(),
+      modules: modulesList
+    });
+    localStorage.setItem('cyfor_report_history', JSON.stringify(history.slice(0, 5)));
+    loadReportHistory();
+  }
+
+  // ============================================================
+  // GENERATE REPORT
+  // ============================================================
+  async function generateReport() {
+    const caseId = document.getElementById('caseId').value.trim();
+    const investigator = document.getElementById('investigator').value.trim();
+    const institution = document.getElementById('institution').value.trim();
+    const notes = document.getElementById('notes').value.trim();
+
+    // Validation
+    if (!caseId) {
+      showError('Please enter a Case ID');
+      return;
+    }
+
+    if (!investigator) {
+      showError('Please enter the Investigator Name');
+      return;
+    }
+
+    // Check which modules are selected
+    const selectedModules = [];
+    const includeModules = {};
+
+    Object.keys(modules).forEach(key => {
+      const toggle = document.getElementById(`toggle${key.charAt(0).toUpperCase() + key.slice(1)}`);
+      if (toggle && toggle.checked && modules[key].available) {
+        selectedModules.push(key);
+        includeModules[`include_${key}`] = true;
+      } else {
+        includeModules[`include_${key}`] = false;
+      }
+    });
+
+    if (selectedModules.length === 0) {
+      showError('Please select at least one module with available data');
+      return;
+    }
+
+    // Show loading
+    showLoading(true);
+    updateLoadingText('Compiling forensic findings...');
+
+    // Build request data
+    const requestData = {
+      case_id: caseId,
+      investigator: investigator,
+      institution: institution,
+      notes: notes,
+      ...includeModules
+    };
+
+    // Add module data
+    Object.keys(modules).forEach(key => {
+      const toggle = document.getElementById(`toggle${key.charAt(0).toUpperCase() + key.slice(1)}`);
+      requestData[`${key}_data`] = (toggle && toggle.checked) ? modules[key].data : null;
+    });
+
+    try {
+      updateLoadingText('Generating PDF...');
+
+      const response = await fetch('/generate_report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate report');
+      }
+
+      updateLoadingText('Finalizing report...');
+
+      // Get the blob from response
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      // Extract filename from Content-Disposition header or use default
+      const disposition = response.headers.get('Content-Disposition');
+      let filename = 'CYFOR_Report.pdf';
+      if (disposition && disposition.includes('filename=')) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
+        if (matches && matches[1]) {
+          filename = matches[1].replace(/['"]/g, '');
+        }
+      }
+      a.download = filename;
+
+      // Trigger download
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      // Add to history
+      const moduleNames = selectedModules.map(m => modules[m].name);
+      addToHistory(caseId, moduleNames);
+
+      showLoading(false);
+      showError(''); // Clear any previous errors
+
+    } catch (error) {
+      console.error('Report generation error:', error);
+      showLoading(false);
+      showError('Failed to generate report: ' + error.message);
+    }
+  }
+
+  function showLoading(show) {
+    const overlay = document.getElementById('loadingOverlay');
+    if (show) {
+      overlay.classList.add('visible');
+    } else {
+      overlay.classList.remove('visible');
+    }
+  }
+
+  function updateLoadingText(text) {
+    document.getElementById('loadingText').textContent = text;
+  }
+
+  function showError(message) {
+    const errorPanel = document.getElementById('errorPanel');
+    const errorMessage = document.getElementById('errorMessage');
+
+    if (message) {
+      errorMessage.textContent = message;
+      errorPanel.classList.add('visible');
+    } else {
+      errorPanel.classList.remove('visible');
+    }
+  }
+
+  document.getElementById('generateBtn').addEventListener('click', generateReport);
+
+  // ============================================================
+  // INITIALIZE
+  // ============================================================
+  initializeModules();
+  loadReportHistory();
+  updatePreview();
+
+})();
+</script>
+{% endblock %}

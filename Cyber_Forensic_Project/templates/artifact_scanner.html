@@ -1,0 +1,779 @@
+{% extends "base.html" %}
+
+{% block title %}Artifact Scanner{% endblock %}
+
+{% block header_title %}Artifact Scanner{% endblock %}
+
+{% block content %}
+<!-- ============================================================
+     PAGE HEADER
+============================================================ -->
+<div class="page-header">
+  <h1 class="page-title">
+    <span class="page-title-icon">◫</span>
+    System Artifact Scanner
+  </h1>
+  <p class="page-subtitle">Discover and analyze forensic artifacts in directories</p>
+</div>
+
+<!-- ============================================================
+     SCAN INPUT PANEL
+============================================================ -->
+<form action="{{ url_for('artifact_scanner') }}" method="POST" id="scanForm">
+  <div class="scan-input-panel">
+    <div class="input-group">
+      <label class="form-label">Directory Path to Scan</label>
+      <input type="text" name="directory_path" class="form-input" id="directoryPath"
+             placeholder="C:\Users\Username\Downloads" value="{{ results.directory if results else '' }}">
+    </div>
+
+    <div class="scan-options">
+      <label class="checkbox-label">
+        <input type="checkbox" name="deep_scan" id="deepScan" {{ 'checked' if request.form.get('deep_scan') else '' }}>
+        <span>Deep Scan (recursive)</span>
+      </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-pulse" id="scanBtn">
+      <span class="btn-icon">⌖</span>
+      SCAN DIRECTORY
+    </button>
+
+    <p class="scan-warning">⚠ Only scan directories you own or have permission to access</p>
+  </div>
+</form>
+
+<!-- ============================================================
+     ERROR MESSAGE
+============================================================ -->
+{% if error %}
+<div class="result-panel mt-4 error-panel">
+  <div class="error-message">
+    <span class="error-icon">⚠</span>
+    <span>{{ error }}</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================================
+     ANALYSIS RESULTS
+============================================================ -->
+{% if results %}
+<div id="analysisResults">
+
+<!-- ============================================================
+     WARNINGS PANEL
+============================================================ -->
+{% if results.warnings %}
+<div class="result-panel mt-4 warnings-panel">
+  <div class="warnings-header">
+    <span class="warnings-icon">⚠</span>
+    <span class="warnings-title">WARNINGS</span>
+  </div>
+  <ul class="warnings-list">
+    {% for warning in results.warnings %}
+    <li class="warning-item">{{ warning }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<!-- ============================================================
+     SCAN SUMMARY PANEL
+============================================================ -->
+<div class="result-panel mt-4">
+  <div class="result-panel-header">
+    <span class="result-panel-title">📊 SCAN SUMMARY</span>
+  </div>
+
+  <div class="scan-summary-info">
+    <div class="summary-row">
+      <span class="summary-label">Directory Scanned</span>
+      <span class="summary-value mono">{{ results.directory }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Scan Timestamp</span>
+      <span class="summary-value">{{ results.scan_time }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-label">Total Files Scanned</span>
+      <span class="summary-value">{{ results.total_files }}</span>
+    </div>
+  </div>
+
+  <div class="stat-boxes">
+    <div class="stat-box stat-hidden">
+      <span class="stat-value">{{ results.hidden_count }}</span>
+      <span class="stat-label">Hidden Files</span>
+    </div>
+    <div class="stat-box stat-mismatch">
+      <span class="stat-value">{{ results.mismatch_count }}</span>
+      <span class="stat-label">Extension Mismatches</span>
+    </div>
+    <div class="stat-box stat-high">
+      <span class="stat-value">{{ results.high_risk }}</span>
+      <span class="stat-label">HIGH Risk</span>
+    </div>
+    <div class="stat-box stat-low">
+      <span class="stat-value">{{ results.low_risk }}</span>
+      <span class="stat-label">LOW Risk</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     RISK DISTRIBUTION BAR
+============================================================ -->
+{% if results.total_files > 0 %}
+<div class="risk-distribution-panel mt-4">
+  <div class="risk-dist-header">
+    <span class="risk-dist-title">RISK DISTRIBUTION</span>
+  </div>
+
+  <div class="risk-bar-container">
+    {% set high_pct = (results.high_risk / results.total_files * 100)|round(1) %}
+    {% set med_pct = (results.medium_risk / results.total_files * 100)|round(1) %}
+    {% set low_pct = (results.low_risk / results.total_files * 100)|round(1) %}
+
+    <div class="risk-bar">
+      <div class="risk-segment risk-high" style="width: {{ high_pct }}%;" title="HIGH: {{ high_pct }}%">
+        {% if high_pct > 5 %}<span class="risk-segment-label">HIGH {{ high_pct }}%</span>{% endif %}
+      </div>
+      <div class="risk-segment risk-medium" style="width: {{ med_pct }}%;" title="MEDIUM: {{ med_pct }}%">
+        {% if med_pct > 5 %}<span class="risk-segment-label">MED {{ med_pct }}%</span>{% endif %}
+      </div>
+      <div class="risk-segment risk-low" style="width: {{ low_pct }}%;" title="LOW: {{ low_pct }}%">
+        {% if low_pct > 5 %}<span class="risk-segment-label">LOW {{ low_pct }}%</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="risk-bar-legend">
+      <div class="legend-item">
+        <span class="legend-color legend-high"></span>
+        <span>HIGH: {{ results.high_risk }}</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color legend-medium"></span>
+        <span>MEDIUM: {{ results.medium_risk }}</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color legend-low"></span>
+        <span>LOW: {{ results.low_risk }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================================
+     FILES RESULTS TABLE
+============================================================ -->
+<div class="result-panel mt-4">
+  <div class="result-panel-header">
+    <span class="result-panel-title">📁 FILES RESULTS</span>
+
+    <div class="filter-buttons">
+      <button class="filter-btn active" data-filter="all">ALL ({{ results.total_files }})</button>
+      <button class="filter-btn" data-filter="HIGH">HIGH ({{ results.high_risk }})</button>
+      <button class="filter-btn" data-filter="MEDIUM">MEDIUM ({{ results.medium_risk }})</button>
+      <button class="filter-btn" data-filter="LOW">LOW ({{ results.low_risk }})</button>
+    </div>
+  </div>
+
+  {% if results.total_files == 0 %}
+  <div class="empty-state">
+    <div class="empty-state-icon">◫</div>
+    <p>No files found in this directory</p>
+    <p class="text-muted">Try a different path or enable Deep Scan</p>
+  </div>
+  {% else %}
+  <div class="table-container">
+    <table class="data-table" id="resultsTable">
+      <thead>
+        <tr>
+          <th style="width: 50px;">#</th>
+          <th>Filename</th>
+          <th style="width: 80px;">Size</th>
+          <th style="width: 80px;">Ext</th>
+          <th>Actual Type</th>
+          <th style="width: 100px;">Status</th>
+          <th style="width: 70px;">Hidden</th>
+          <th style="width: 100px;">Risk Level</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody">
+        {% for file in results.files %}
+        <tr class="file-row {% if file.is_hidden %}hidden-row{% endif %}" data-risk="{{ file.risk_level }}">
+          <td class="row-num">{{ loop.index }}</td>
+          <td class="mono filename-cell">{{ file.name }}</td>
+          <td class="size-cell">{{ file.size_kb }} KB</td>
+          <td class="ext-cell mono">{{ file.extension }}</td>
+          <td class="type-cell mono">{{ file.actual_type }}</td>
+          <td class="status-cell">
+            {% if file.mime_status == 'MATCH' %}
+            <span class="status-badge status-match">MATCH</span>
+            {% elif file.mime_status == 'MISMATCH' %}
+            <span class="status-badge status-mismatch">MISMATCH</span>
+            {% else %}
+            <span class="status-badge status-undetectable">UNDETECTABLE</span>
+            {% endif %}
+          </td>
+          <td class="hidden-cell">
+            {% if file.is_hidden or file.is_system %}
+            <span class="hidden-badge">YES</span>
+            {% else %}
+            <span class="text-muted">NO</span>
+            {% endif %}
+          </td>
+          <td class="risk-cell">
+            {% if file.risk_level == 'HIGH' %}
+            <span class="risk-badge risk-high">⚠ HIGH</span>
+            {% elif file.risk_level == 'MEDIUM' %}
+            <span class="risk-badge risk-medium">! MEDIUM</span>
+            {% else %}
+            <span class="risk-badge risk-low">✓ LOW</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+
+</div>
+{% endif %}
+
+<!-- ============================================================
+     ACTION BUTTONS
+============================================================ -->
+<div class="mt-4" style="display: flex; gap: 1rem;">
+  <button class="btn btn-primary" id="newScanBtn">
+    <span class="btn-icon">⌖</span>
+    NEW SCAN
+  </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Filter buttons functionality
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Update active state
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const filter = btn.dataset.filter;
+      const rows = document.querySelectorAll('.file-row');
+
+      rows.forEach(row => {
+        if (filter === 'all') {
+          row.style.display = '';
+        } else {
+          row.style.display = row.dataset.risk === filter ? '' : 'none';
+        }
+      });
+    });
+  });
+
+  // New scan button
+  document.getElementById('newScanBtn').addEventListener('click', () => {
+    window.location.href = '{{ url_for("artifact_scanner") }}';
+  });
+
+  // Auto-scroll to results if present
+  {% if results %}
+  document.addEventListener('DOMContentLoaded', () => {
+    const resultsDiv = document.getElementById('analysisResults');
+    if (resultsDiv) {
+      resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Cache results in localStorage for report generation
+    const artifactData = {
+      directory: {{ results.directory | tojson }},
+      scan_time: {{ results.scan_time | tojson }},
+      total_files: {{ results.total_files }},
+      hidden_count: {{ results.hidden_count }},
+      mismatch_count: {{ results.mismatch_count }},
+      high_risk: {{ results.high_risk }},
+      medium_risk: {{ results.medium_risk }},
+      low_risk: {{ results.low_risk }},
+      files: {{ results.files | tojson }},
+      warnings: {{ results.warnings | tojson }}
+    };
+    localStorage.setItem('cyfor_artifact', JSON.stringify(artifactData));
+    console.log('Artifact scanner results cached for report generation');
+  });
+  {% endif %}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Scan Input Panel */
+  .scan-input-panel {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(0, 255, 157, 0.2);
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .input-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-label {
+    display: block;
+    color: #8892b0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 255, 157, 0.3);
+    border-radius: 4px;
+    color: #ccd6f6;
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: #00ff9d;
+    box-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+  }
+
+  .scan-options {
+    margin-bottom: 1rem;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #8892b0;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #00ff9d;
+  }
+
+  .scan-warning {
+    color: #ffc107;
+    font-size: 0.8rem;
+    font-style: italic;
+    margin-top: 1rem;
+  }
+
+  /* Warnings Panel */
+  .warnings-panel {
+    background: rgba(255, 193, 7, 0.08);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+  }
+
+  .warnings-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .warnings-icon {
+    color: #ffc107;
+    font-size: 1.25rem;
+  }
+
+  .warnings-title {
+    color: #ffc107;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .warnings-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .warning-item {
+    color: #ffd93d;
+    padding: 0.5rem 0;
+    font-size: 0.9rem;
+  }
+
+  /* Scan Summary */
+  .scan-summary-info {
+    margin-bottom: 1.5rem;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .summary-label {
+    color: #8892b0;
+    font-size: 0.85rem;
+  }
+
+  .summary-value {
+    color: #ccd6f6;
+    font-weight: 600;
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+  }
+
+  /* Stat Boxes */
+  .stat-boxes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .stat-box {
+    padding: 1.25rem;
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid transparent;
+  }
+
+  .stat-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
+  }
+
+  .stat-hidden {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.3);
+  }
+  .stat-hidden .stat-value { color: #ffc107; }
+  .stat-hidden .stat-label { color: #ffc107; }
+
+  .stat-mismatch {
+    background: rgba(255, 77, 109, 0.1);
+    border-color: rgba(255, 77, 109, 0.3);
+  }
+  .stat-mismatch .stat-value { color: #ff4d6d; }
+  .stat-mismatch .stat-label { color: #ff4d6d; }
+
+  .stat-high {
+    background: rgba(255, 77, 109, 0.1);
+    border-color: rgba(255, 77, 109, 0.3);
+  }
+  .stat-high .stat-value { color: #ff4d6d; }
+  .stat-high .stat-label { color: #ff4d6d; }
+
+  .stat-low {
+    background: rgba(0, 255, 157, 0.1);
+    border-color: rgba(0, 255, 157, 0.3);
+  }
+  .stat-low .stat-value { color: #00ff9d; }
+  .stat-low .stat-label { color: #00ff9d; }
+
+  /* Risk Distribution */
+  .risk-distribution-panel {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(0, 255, 157, 0.2);
+    border-radius: 6px;
+    padding: 1.25rem;
+  }
+
+  .risk-dist-header {
+    margin-bottom: 1rem;
+  }
+
+  .risk-dist-title {
+    color: #00ff9d;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .risk-bar-container {
+    margin-top: 1rem;
+  }
+
+  .risk-bar {
+    display: flex;
+    height: 40px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+  }
+
+  .risk-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.3s ease;
+    min-width: 0;
+  }
+
+  .risk-segment-label {
+    color: #000;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .risk-high {
+    background: linear-gradient(135deg, #ff4d6d 0%, #ff6b6b 100%);
+  }
+
+  .risk-medium {
+    background: linear-gradient(135deg, #ffc107 0%, #ffd93d 100%);
+  }
+
+  .risk-low {
+    background: linear-gradient(135deg, #00ff9d 0%, #00d482 100%);
+  }
+
+  .risk-bar-legend {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #8892b0;
+  }
+
+  .legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+  }
+
+  .legend-high { background: #ff4d6d; }
+  .legend-medium { background: #ffc107; }
+  .legend-low { background: #00ff9d; }
+
+  /* Filter Buttons */
+  .filter-buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .filter-btn {
+    padding: 0.4rem 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: #8892b0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover {
+    border-color: #00ff9d;
+    color: #00ff9d;
+  }
+
+  .filter-btn.active {
+    background: rgba(0, 255, 157, 0.15);
+    border-color: #00ff9d;
+    color: #00ff9d;
+  }
+
+  /* Data Table */
+  .table-container {
+    overflow-x: auto;
+    margin-top: 1rem;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  .data-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 255, 157, 0.08);
+    color: #00ff9d;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    border-bottom: 2px solid rgba(0, 255, 157, 0.3);
+  }
+
+  .data-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #ccd6f6;
+  }
+
+  .data-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .row-num {
+    color: #5a6a8a;
+    font-size: 0.75rem;
+  }
+
+  .filename-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .size-cell, .ext-cell {
+    color: #8892b0;
+  }
+
+  .type-cell {
+    color: #8892b0;
+    font-size: 0.8rem;
+  }
+
+  /* Status Badges */
+  .status-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .status-match {
+    background: rgba(0, 255, 157, 0.15);
+    color: #00ff9d;
+  }
+
+  .status-mismatch {
+    background: rgba(255, 77, 109, 0.15);
+    color: #ff4d6d;
+  }
+
+  .status-undetectable {
+    background: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+  }
+
+  /* Hidden Badge */
+  .hidden-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+  }
+
+  /* Risk Badges */
+  .risk-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .risk-badge.risk-high {
+    background: rgba(255, 77, 109, 0.15);
+    color: #ff4d6d;
+    border: 1px solid rgba(255, 77, 109, 0.3);
+  }
+
+  .risk-badge.risk-medium {
+    background: rgba(255, 193, 7, 0.15);
+    color: #ffc107;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+  }
+
+  .risk-badge.risk-low {
+    background: rgba(0, 255, 157, 0.15);
+    color: #00ff9d;
+    border: 1px solid rgba(0, 255, 157, 0.3);
+  }
+
+  /* Hidden Row */
+  .hidden-row {
+    background: rgba(255, 193, 7, 0.05);
+  }
+
+  .hidden-row:hover {
+    background: rgba(255, 193, 7, 0.08);
+  }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #5a6a8a;
+  }
+
+  .empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .empty-state p {
+    margin: 0.5rem 0;
+  }
+
+  /* Error Panel */
+  .error-panel {
+    background: rgba(255, 77, 109, 0.1);
+    border: 1px solid #ff4d6d;
+  }
+
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #ff4d6d;
+  }
+
+  .error-icon {
+    font-size: 1.25rem;
+  }
+</style>
+{% endblock %}

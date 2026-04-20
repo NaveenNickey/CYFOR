@@ -1,0 +1,1087 @@
+{% extends "base.html" %}
+
+{% block title %}Keyword Search{% endblock %}
+
+{% block header_title %}Keyword Search{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ============================================
+   KEYWORD SEARCH - FORENSIC THEME
+   Black background with green accents
+============================================ */
+
+/* Search Input Panel */
+.search-panel {
+  background: linear-gradient(135deg, #0a0a0a 0%, #111 100%);
+  border: 1px solid #00ff41;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+}
+
+.search-panel-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #00ff41;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.search-panel-title::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: #00ff41;
+  border-radius: 2px;
+}
+
+/* Form Elements */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #888;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-input {
+  width: 100%;
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 0.875rem 1rem;
+  color: #e0e0e0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #00ff41;
+  box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+}
+
+.form-input::placeholder {
+  color: #555;
+}
+
+/* Pattern Chips */
+.pattern-chips-container {
+  margin-top: 1rem;
+}
+
+.pattern-chips-title {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pattern-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.chip:hover {
+  border-color: #00ff41;
+  color: #00ff41;
+}
+
+.chip.active {
+  background: rgba(0, 255, 65, 0.1);
+  border-color: #00ff41;
+  color: #00ff41;
+}
+
+.chip-icon {
+  font-size: 0.9rem;
+}
+
+/* Checkbox */
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #0a0a0a;
+  border-radius: 6px;
+  border: 1px solid #222;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #00ff41;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  font-size: 0.85rem;
+  color: #aaa;
+  cursor: pointer;
+}
+
+/* Search Button with Glow Animation */
+.btn-glow {
+  position: relative;
+  width: 100%;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #00cc33 0%, #00ff41 100%);
+  border: none;
+  border-radius: 6px;
+  color: #000;
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  overflow: hidden;
+  animation: greenGlow 2s ease-in-out infinite;
+}
+
+@keyframes greenGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(0, 255, 65, 0.5),
+                0 0 10px rgba(0, 255, 65, 0.3),
+                0 0 20px rgba(0, 255, 65, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.8),
+                0 0 20px rgba(0, 255, 65, 0.5),
+                0 0 40px rgba(0, 255, 65, 0.3);
+  }
+}
+
+.btn-glow:hover {
+  background: linear-gradient(135deg, #00ff41 0%, #00ff66 100%);
+  transform: translateY(-1px);
+}
+
+/* Search Summary Panel */
+.summary-panel {
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #222;
+}
+
+.summary-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summary-status {
+  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(0, 255, 65, 0.1);
+  color: #00ff41;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Stat Boxes */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-box {
+  background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
+  border: 1px solid #222;
+  border-radius: 6px;
+  padding: 1rem;
+  text-align: center;
+  transition: border-color 0.2s ease;
+}
+
+.stat-box:hover {
+  border-color: #00ff41;
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #00ff41;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 0.25rem;
+}
+
+/* CSS Bar Chart */
+.chart-container {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #222;
+}
+
+.chart-title {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chart-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chart-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chart-label {
+  width: 100px;
+  font-size: 0.75rem;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.chart-bar-wrapper {
+  flex: 1;
+  height: 24px;
+  background: #1a1a1a;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.chart-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00cc33 0%, #00ff41 100%);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.5rem;
+}
+
+.chart-bar-value {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #000;
+}
+
+/* Results Table */
+.results-panel {
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: #111;
+  border-bottom: 1px solid #222;
+}
+
+.results-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Filter Buttons */
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: #0d0d0d;
+  border-bottom: 1px solid #222;
+}
+
+.filter-btn {
+  padding: 0.375rem 0.75rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+  border-color: #00ff41;
+  color: #00ff41;
+  background: rgba(0, 255, 65, 0.1);
+}
+
+/* Table Styles */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.results-table th {
+  background: #111;
+  padding: 0.875rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #222;
+}
+
+.results-table th:first-child {
+  width: 50px;
+  text-align: center;
+}
+
+.results-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #1a1a1a;
+  vertical-align: top;
+}
+
+.results-table tr:hover td {
+  background: #0d0d0d;
+}
+
+.results-table tr:hover {
+  cursor: pointer;
+}
+
+.results-table tr.expanded {
+  background: #0f0f0f;
+}
+
+.row-number {
+  font-family: 'JetBrains Mono', monospace;
+  color: #555;
+  text-align: center;
+}
+
+.file-path {
+  font-family: 'JetBrains Mono', monospace;
+  color: #00aaff;
+  word-break: break-all;
+}
+
+.line-number {
+  font-family: 'JetBrains Mono', monospace;
+  color: #888;
+}
+
+/* Type Badges */
+.type-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-credit_card { background: rgba(255, 107, 107, 0.15); color: #ff6b6b; }
+.badge-ip_address { background: rgba(77, 171, 247, 0.15); color: #4dabf7; }
+.badge-email { background: rgba(255, 212, 59, 0.15); color: #ffd43b; }
+.badge-ssn { background: rgba(255, 107, 107, 0.15); color: #ff6b6b; }
+.badge-api_key { background: rgba(255, 0, 112, 0.15); color: #ff0070; }
+.badge-phone { background: rgba(132, 94, 247, 0.15); color: #845ef7; }
+.badge-url { background: rgba(64, 192, 87, 0.15); color: #40c057; }
+.badge-windows_path { background: rgba(145, 167, 255, 0.15); color: #91a7ff; }
+.badge-custom { background: rgba(0, 255, 65, 0.15); color: #00ff41; }
+
+/* Content Preview */
+.content-preview {
+  max-width: 400px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Highlighted Match */
+mark.match-highlight {
+  background: rgba(0, 255, 65, 0.3);
+  color: #00ff41;
+  padding: 0.125rem 0.25rem;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+/* Expandable Row Details */
+.row-details {
+  display: none;
+  background: #0d0d0d;
+  padding: 1rem;
+  border-top: 1px solid #222;
+}
+
+.row-details.expanded {
+  display: table-row;
+}
+
+.row-details-content {
+  padding: 1rem;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-label {
+  font-size: 0.7rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+.full-content {
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 4px;
+  padding: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: #888;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Warnings Panel */
+.warnings-panel {
+  background: linear-gradient(135deg, #1a1505 0%, #0f0d02 100%);
+  border: 1px solid #665c00;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.warnings-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: #ffd43b;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.warnings-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.warnings-list li {
+  font-size: 0.8rem;
+  color: #aa9;
+  padding: 0.375rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.warnings-list li::before {
+  content: '▸';
+  color: #ffd43b;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.empty-state-title {
+  font-size: 1rem;
+  color: #888;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+/* New Search Button */
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: 1px solid #00ff41;
+  border-radius: 6px;
+  color: #00ff41;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(0, 255, 65, 0.1);
+}
+
+/* Section visibility */
+.results-section {
+  display: none;
+}
+
+.results-section.visible {
+  display: block;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ============================================================
+     PAGE HEADER
+============================================================ -->
+<div class="page-header">
+  <h1 class="page-title">
+    <span class="page-title-icon">⌖</span>
+    Keyword & Pattern Search
+  </h1>
+  <p class="page-subtitle">Search files for sensitive patterns and custom keywords</p>
+</div>
+
+<!-- ============================================================
+     SEARCH INPUT PANEL
+============================================================ -->
+<div id="searchInputSection">
+  <form id="searchForm" method="POST" action="{{ url_for('keyword_search') }}">
+    <div class="search-panel">
+      <div class="search-panel-title">Search Configuration</div>
+
+      <!-- Directory Path Input -->
+      <div class="form-group">
+        <label class="form-label" for="directoryPath">Directory Path</label>
+        <input type="text" class="form-input" id="directoryPath" name="directory_path"
+               placeholder="e.g., C:\Users\Documents\ evidence"
+               value="{{ request.form.get('directory_path', '') }}">
+      </div>
+
+      <!-- Custom Keywords Input -->
+      <div class="form-group">
+        <label class="form-label" for="customKeywords">Custom Keywords (comma-separated)</label>
+        <input type="text" class="form-input" id="customKeywords" name="custom_keywords"
+               placeholder="e.g., password, secret, confidential, api_key"
+               value="{{ request.form.get('custom_keywords', '') }}">
+      </div>
+
+      <!-- Pattern Preset Chips -->
+      <div class="pattern-chips-container">
+        <div class="pattern-chips-title">Pattern Presets (click to toggle)</div>
+        <div class="pattern-chips" id="patternChips">
+          <div class="chip active" data-pattern="credit_card">
+            <span class="chip-icon">💳</span>
+            Credit Card
+          </div>
+          <div class="chip active" data-pattern="ip_address">
+            <span class="chip-icon">🌐</span>
+            IP Address
+          </div>
+          <div class="chip active" data-pattern="email">
+            <span class="chip-icon">📧</span>
+            Email
+          </div>
+          <div class="chip" data-pattern="ssn">
+            <span class="chip-icon">🆔</span>
+            SSN
+          </div>
+          <div class="chip active" data-pattern="api_key">
+            <span class="chip-icon">🔑</span>
+            API Key
+          </div>
+          <div class="chip" data-pattern="phone">
+            <span class="chip-icon">📱</span>
+            Phone
+          </div>
+          <div class="chip" data-pattern="url">
+            <span class="chip-icon">🔗</span>
+            URL
+          </div>
+          <div class="chip" data-pattern="windows_path">
+            <span class="chip-icon">📁</span>
+            Windows Path
+          </div>
+        </div>
+      </div>
+
+      <!-- Deep Scan Checkbox -->
+      <div class="checkbox-wrapper">
+        <input type="checkbox" id="deepScan" name="deep_scan" value="1">
+        <label class="checkbox-label" for="deepScan">
+          Enable Deep Scan (scan binary files and archives)
+        </label>
+      </div>
+    </div>
+
+    <!-- START SEARCH Button -->
+    <button type="submit" class="btn-glow" id="startSearchBtn">
+      <span style="margin-right: 0.5rem;">⌖</span>
+      START SEARCH
+    </button>
+  </form>
+</div>
+
+<!-- ============================================================
+     SEARCH RESULTS SECTION (Jinja2 conditional)
+============================================================ -->
+{% if results %}
+<div id="resultsSection" class="results-section visible">
+
+  <!-- NEW SEARCH Button -->
+  <div style="margin: 1.5rem 0;">
+    <button type="button" class="btn-secondary" id="newSearchBtn">
+      ← New Search
+    </button>
+  </div>
+
+  <!-- Search Summary Panel -->
+  <div class="summary-panel">
+    <div class="summary-header">
+      <div class="summary-title">
+        <span>📊</span>
+        Search Summary
+      </div>
+      <span class="summary-status">Complete</span>
+    </div>
+
+    <!-- Stat Boxes -->
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-value">{{ stats.files_scanned if stats else 0 }}</div>
+        <div class="stat-label">Files Scanned</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">{{ stats.files_skipped if stats else 0 }}</div>
+        <div class="stat-label">Files Skipped</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">{{ stats.total_matches if stats else 0 }}</div>
+        <div class="stat-label">Total Matches</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">{{ stats.duration if stats else '0s' }}</div>
+        <div class="stat-label">Duration</div>
+      </div>
+    </div>
+
+    <!-- CSS Bar Chart -->
+    {% if match_counts %}
+    <div class="chart-container">
+      <div class="chart-title">Matches by Pattern Type</div>
+      <div class="chart-bars">
+        {% set max_count = match_counts.values() | max if match_counts else 0 %}
+        {% for pattern_type, count in match_counts.items() %}
+        {% set percentage = (count / max_count * 100) if max_count > 0 else 0 %}
+        <div class="chart-row">
+          <div class="chart-label">{{ pattern_type | replace('_', ' ') | title }}</div>
+          <div class="chart-bar-wrapper">
+            <div class="chart-bar" style="width: {{ percentage }}%;">
+              {% if percentage > 15 %}
+              <span class="chart-bar-value">{{ count }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Warnings Panel (conditional) -->
+  {% if warnings and warnings | length > 0 %}
+  <div class="warnings-panel">
+    <div class="warnings-header">
+      <span>⚠️</span>
+      <span>Warnings ({{ warnings | length if warnings else 0 }})</span>
+    </div>
+    <ul class="warnings-list">
+      {% for warning in warnings %}
+      <li>{{ warning }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Results Table Panel -->
+  <div class="results-panel">
+    <div class="results-header">
+      <div class="results-title">
+        <span>📋</span>
+        Match Results
+        <span style="margin-left: 0.5rem; color: #666; font-size: 0.85rem;">
+          ({{ results | length if results else 0 }} found)
+        </span>
+      </div>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div class="filter-buttons" id="filterButtons">
+      <button class="filter-btn active" data-filter="all">All</button>
+      {% set unique_types = results | map(attribute='match_type') | unique | list %}
+      {% for match_type in unique_types %}
+      <button class="filter-btn" data-filter="{{ match_type }}">
+        {{ match_type | replace('_', ' ') | title }}
+      </button>
+      {% endfor %}
+    </div>
+
+    {% if results and results | length > 0 %}
+    <!-- Results Table -->
+    <table class="results-table" id="resultsTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>File</th>
+          <th>Line</th>
+          <th>Matched Type</th>
+          <th>Content Preview</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for result in results %}
+        <tr class="result-row" data-match-type="{{ result.match_type }}" data-row-index="{{ loop.index }}">
+          <td class="row-number">{{ loop.index }}</td>
+          <td class="file-path">{{ result.file_path }}</td>
+          <td class="line-number">{{ result.line_number or 'N/A' }}</td>
+          <td>
+            <span class="type-badge badge-{{ result.match_type }}">
+              {{ result.match_type | replace('_', ' ') | upper }}
+            </span>
+          </td>
+          <td class="content-preview">
+            {% if result.match_text %}
+            ...<mark class="match-highlight">{{ result.match_text | truncate(50) }}</mark>...
+            {% else %}
+            {{ result.preview | truncate(60) }}
+            {% endif %}
+          </td>
+        </tr>
+        <tr class="row-details" id="details-{{ loop.index }}">
+          <td colspan="5">
+            <div class="row-details-content">
+              <div class="details-grid">
+                <div class="detail-item">
+                  <span class="detail-label">File Path</span>
+                  <span class="detail-value">{{ result.file_path }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Line Number</span>
+                  <span class="detail-value">{{ result.line_number or 'N/A' }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Match Type</span>
+                  <span class="detail-value">{{ result.match_type | replace('_', ' ') | title }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Confidence</span>
+                  <span class="detail-value">{{ result.confidence or 'High' }}</span>
+                </div>
+              </div>
+              <div class="detail-label">Full Context</div>
+              <div class="full-content">{{ result.full_context or result.preview or result.match_text or 'No content available' }}</div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+      <div class="empty-state-icon">⌖</div>
+      <div class="empty-state-title">No matches found</div>
+      <div class="empty-state-text">
+        Try adjusting your search criteria or enabling additional pattern types.
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // PATTERN CHIP TOGGLE
+  // ============================================================
+  const chips = document.querySelectorAll('.chip');
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('active');
+      updatePatternInput();
+    });
+  });
+
+  function updatePatternInput() {
+    const activePatterns = Array.from(document.querySelectorAll('.chip.active'))
+      .map(chip => chip.dataset.pattern);
+    console.log('Selected patterns:', activePatterns);
+  }
+
+  // ============================================================
+  // FILTER BUTTONS (Pure JS)
+  // ============================================================
+  const filterButtons = document.querySelectorAll('.filter-btn');
+  const resultRows = document.querySelectorAll('.result-row');
+
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Update active button
+      filterButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const filter = btn.dataset.filter;
+
+      // Filter rows
+      resultRows.forEach(row => {
+        const matchType = row.dataset.matchType;
+        const detailsRow = document.getElementById('details-' + row.dataset.rowIndex);
+
+        if (filter === 'all' || matchType === filter) {
+          row.style.display = '';
+          if (detailsRow && detailsRow.classList.contains('expanded')) {
+            detailsRow.style.display = 'table-row';
+          }
+        } else {
+          row.style.display = 'none';
+          if (detailsRow) {
+            detailsRow.style.display = 'none';
+          }
+        }
+      });
+    });
+  });
+
+  // ============================================================
+  // EXPANDABLE ROWS
+  // ============================================================
+  resultRows.forEach(row => {
+    row.addEventListener('click', () => {
+      const index = row.dataset.rowIndex;
+      const detailsRow = document.getElementById('details-' + index);
+
+      if (detailsRow) {
+        const isExpanded = detailsRow.classList.contains('expanded');
+
+        // Close all other expanded rows
+        document.querySelectorAll('.row-details.expanded').forEach(r => {
+          r.classList.remove('expanded');
+          r.style.display = 'none';
+        });
+        document.querySelectorAll('.result-row.expanded').forEach(r => {
+          r.classList.remove('expanded');
+        });
+
+        if (!isExpanded) {
+          detailsRow.classList.add('expanded');
+          detailsRow.style.display = 'table-row';
+          row.classList.add('expanded');
+        }
+      }
+    });
+  });
+
+  // ============================================================
+  // FORM SUBMISSION - AUTO SCROLL TO RESULTS
+  // ============================================================
+  const searchForm = document.getElementById('searchForm');
+  const resultsSection = document.getElementById('resultsSection');
+
+  if (searchForm) {
+    searchForm.addEventListener('submit', (e) => {
+      // Form submits normally, but if we're using JS/AJAX:
+      // Scroll to results after a brief delay to allow rendering
+      setTimeout(() => {
+        if (resultsSection) {
+          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    });
+  }
+
+  // ============================================================
+  // AUTO-SCROLL TO RESULTS ON PAGE LOAD
+  // ============================================================
+  if (resultsSection && resultsSection.classList.contains('visible')) {
+    setTimeout(() => {
+      resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
+
+  // ============================================================
+  // NEW SEARCH BUTTON
+  // ============================================================
+  const newSearchBtn = document.getElementById('newSearchBtn');
+  const searchInputSection = document.getElementById('searchInputSection');
+
+  if (newSearchBtn) {
+    newSearchBtn.addEventListener('click', () => {
+      // Hide results, show input form
+      if (resultsSection) {
+        resultsSection.classList.remove('visible');
+        resultsSection.style.display = 'none';
+      }
+
+      // Scroll to search form
+      if (searchInputSection) {
+        searchInputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      // Optional: Clear form
+      // searchForm.reset();
+    });
+  }
+
+  // ============================================================
+  // MATCH HIGHLIGHTING WITH MARK TAGS
+  // ============================================================
+  function highlightMatches() {
+    const previews = document.querySelectorAll('.content-preview');
+    previews.forEach(preview => {
+      // The mark tags are already in place via Jinja2 template
+      // This function can be extended for dynamic highlighting
+      const marks = preview.querySelectorAll('mark.match-highlight');
+      marks.forEach(mark => {
+        mark.title = 'Click to view full context';
+      });
+    });
+  }
+
+  highlightMatches();
+
+  // ============================================================
+  // BAR CHART ANIMATION
+  // ============================================================
+  function animateCharts() {
+    const bars = document.querySelectorAll('.chart-bar');
+    bars.forEach(bar => {
+      const targetWidth = bar.style.width;
+      bar.style.width = '0%';
+      setTimeout(() => {
+        bar.style.width = targetWidth;
+      }, 100);
+    });
+  }
+
+  // Animate charts on page load
+  if (resultsSection && resultsSection.classList.contains('visible')) {
+    setTimeout(animateCharts, 300);
+  }
+
+  // Cache results in localStorage for report generation
+  {% if results %}
+  (function cacheResults() {
+    const keywordData = {
+      directory: {{ results.directory | tojson }},
+      scan_time: {{ results.scan_time | tojson }},
+      duration: {{ results.duration }},
+      total_files_scanned: {{ results.total_files_scanned }},
+      total_files_skipped: {{ results.total_files_skipped }},
+      total_matches: {{ results.total_matches }},
+      matches_by_type: {{ results.matches_by_type | tojson }},
+      matches: {{ results.matches | tojson }},
+      warnings: {{ results.warnings | tojson }}
+    };
+    localStorage.setItem('cyfor_keyword', JSON.stringify(keywordData));
+    console.log('Keyword search results cached for report generation');
+  })();
+  {% endif %}
+
+})();
+</script>
+{% endblock %}

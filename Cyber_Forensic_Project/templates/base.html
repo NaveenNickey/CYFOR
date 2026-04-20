@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CYFOR{% endblock %} | Cyber Forensic Workstation</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <div class="layout">
+
+    <!-- ============================================================
+         SIDEBAR NAVIGATION
+    ============================================================ -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <span class="sidebar-logo-icon">⬡</span>
+          <span>CYFOR</span>
+        </div>
+      </div>
+
+      <nav>
+        <ul class="sidebar-nav">
+          <li class="nav-item">
+            <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+              <span class="nav-icon">◈</span>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ url_for('integrity') }}" class="nav-link {% if request.endpoint == 'integrity' %}active{% endif %}">
+              <span class="nav-icon">⬗</span>
+              <span>Integrity Check</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ url_for('image_forensics') }}" class="nav-link {% if request.endpoint == 'image_forensics' %}active{% endif %}">
+              <span class="nav-icon">◉</span>
+              <span>Image Forensics</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ url_for('hex_viewer') }}" class="nav-link {% if request.endpoint == 'hex_viewer' %}active{% endif %}">
+              <span class="nav-icon">▣</span>
+              <span>Hex Viewer</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ url_for('artifact_scanner') }}" class="nav-link {% if request.endpoint == 'artifact_scanner' %}active{% endif %}">
+              <span class="nav-icon">◫</span>
+              <span>Artifact Scanner</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ url_for('keyword_search') }}" class="nav-link {% if request.endpoint == 'keyword_search' %}active{% endif %}">
+              <span class="nav-icon">⌖</span>
+              <span>Keyword Search</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ url_for('report') }}" class="nav-link {% if request.endpoint == 'report' %}active{% endif %}">
+              <span class="nav-icon">📄</span>
+              <span>Generate Report</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- ============================================================
+         TOP HEADER
+    ============================================================ -->
+    <header class="header">
+      <div class="header-title">
+        {% block header_title %}Dashboard{% endblock %}
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary btn-pulse" id="newScanBtn">
+          <span class="btn-icon">+</span>
+          NEW SCAN
+        </button>
+      </div>
+    </header>
+
+    <!-- ============================================================
+         MAIN CONTENT AREA
+    ============================================================ -->
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- ============================================================
+         FOOTER
+    ============================================================ -->
+    <footer class="footer">
+      <div class="footer-content">
+        <span>CYBER FORENSIC TOOL v1.0</span>
+        <span class="footer-version">JNN Institute of Engineering</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- JavaScript -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

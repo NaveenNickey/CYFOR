@@ -1,0 +1,561 @@
+{% extends "base.html" %}
+
+{% block title %}Image Forensics{% endblock %}
+
+{% block header_title %}Image Forensics{% endblock %}
+
+{% block content %}
+<!-- ============================================================
+     PAGE HEADER
+============================================================ -->
+<div class="page-header">
+  <h1 class="page-title">
+    <span class="page-title-icon">◉</span>
+    Image Forensic Analysis
+  </h1>
+  <p class="page-subtitle">Detect steganography and extract metadata from image files</p>
+</div>
+
+<!-- ============================================================
+     FILE UPLOAD SECTION
+============================================================ -->
+<form action="{{ url_for('image_forensics') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+  <div class="upload-box" id="uploadBox">
+    <div class="upload-box-icon">◉</div>
+    <h3 class="upload-box-title">Upload Image for Analysis</h3>
+    <p class="upload-box-desc">Supports: JPG, PNG, BMP, TIFF, GIF</p>
+    <input type="file" name="file" class="upload-input" id="fileInput" accept="image/*">
+  </div>
+</form>
+
+<!-- ============================================================
+     ERROR MESSAGE
+============================================================ -->
+{% if error %}
+<div class="result-panel mt-4 error-panel">
+  <div class="error-message">
+    <span class="error-icon">⚠</span>
+    <span>{{ error }}</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================================
+     ANALYSIS RESULTS
+============================================================ -->
+{% if results %}
+<div id="analysisResults">
+
+<!-- ============================================================
+     LSB STEGANOGRAPHY ANALYSIS
+============================================================ -->
+<div class="result-panel mt-4">
+  <div class="result-panel-header">
+    <span class="result-panel-title">🔬 LSB STEGANOGRAPHY ANALYSIS</span>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem;">
+    {% set verdict = results.lsb_analysis.verdict %}
+    {% if verdict == 'CLEAN' %}
+    <span class="badge badge-clean" id="stegoResult">CLEAN</span>
+    {% else %}
+    <span class="badge badge-suspicious" id="stegoResult">SUSPICIOUS</span>
+    {% endif %}
+    <span class="text-muted" id="stegoConfidence">Confidence: {{ results.lsb_analysis.confidence }}</span>
+  </div>
+
+  <!-- Bit Distribution Bar -->
+  <div class="bit-bar-container">
+    <div class="bit-bar" id="bitBar">
+      <div class="bit-segment zeros" style="width: {{ results.lsb_analysis.zeros_ratio }}%;" title="Zeros: {{ results.lsb_analysis.zeros_ratio }}%"></div>
+      <div class="bit-segment ones" style="width: {{ results.lsb_analysis.ones_ratio }}%;" title="Ones: {{ results.lsb_analysis.ones_ratio }}%"></div>
+    </div>
+    <div class="bit-legend">
+      <div class="bit-legend-item">
+        <div class="bit-legend-color" style="background: #00ff9d;"></div>
+        <span>0 bits: {{ results.lsb_analysis.zeros_ratio }}%</span>
+      </div>
+      <div class="bit-legend-item">
+        <div class="bit-legend-color" style="background: #ff4d6d;"></div>
+        <span>1 bits: {{ results.lsb_analysis.ones_ratio }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Per-Channel Entropy Bars -->
+  <div class="entropy-section" style="margin-top: 1.5rem;">
+    <h4 class="entropy-title" style="color: #00ff9d; font-size: 0.85rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px;">
+      Channel Entropy Analysis
+    </h4>
+
+    <div class="entropy-bar-row">
+      <span class="entropy-label">RED</span>
+      <div class="entropy-bar-container">
+        <div class="entropy-bar-fill" style="width: {{ (results.lsb_analysis.r_entropy / 8) * 100 }}%; background: #ff4d6d;"></div>
+      </div>
+      <span class="entropy-value">{{ results.lsb_analysis.r_entropy }}</span>
+    </div>
+
+    <div class="entropy-bar-row">
+      <span class="entropy-label">GREEN</span>
+      <div class="entropy-bar-container">
+        <div class="entropy-bar-fill" style="width: {{ (results.lsb_analysis.g_entropy / 8) * 100 }}%; background: #00ff9d;"></div>
+      </div>
+      <span class="entropy-value">{{ results.lsb_analysis.g_entropy }}</span>
+    </div>
+
+    <div class="entropy-bar-row">
+      <span class="entropy-label">BLUE</span>
+      <div class="entropy-bar-container">
+        <div class="entropy-bar-fill" style="width: {{ (results.lsb_analysis.b_entropy / 8) * 100 }}%; background: #4d94ff;"></div>
+      </div>
+      <span class="entropy-value">{{ results.lsb_analysis.b_entropy }}</span>
+    </div>
+
+    <p class="text-muted" style="font-size: 0.75rem; margin-top: 0.75rem;">
+      Entropy range: 0-8 bits. Higher entropy indicates more randomness.
+    </p>
+  </div>
+
+  <p class="text-muted" style="font-size: 0.85rem; margin-top: 1rem;">
+    LSB (Least Significant Bit) analysis examines the distribution of 0s and 1s in the least
+    significant bits of pixel data. Anomalies may indicate hidden data insertion.
+  </p>
+</div>
+
+<!-- ============================================================
+     EXIF METADATA EXTRACTOR
+============================================================ -->
+<div class="result-panel mt-4">
+  <div class="result-panel-header">
+    <span class="result-panel-title">📷 EXIF METADATA EXTRACTOR</span>
+  </div>
+
+  {% set exif = results.exif_data %}
+  {% set has_gps = exif.gps and exif.gps|length > 0 %}
+
+  {% if has_gps %}
+  <div class="gps-warning" style="background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; border-radius: 4px; padding: 1rem; margin-bottom: 1.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <span style="color: #ffc107; font-size: 1.25rem;">⚠</span>
+      <div>
+        <strong style="color: #ffc107;">GPS COORDINATES FOUND</strong>
+        <p style="margin: 0.25rem 0 0 0; color: #ffc107; opacity: 0.8; font-size: 0.85rem;">
+          This image contains embedded location data: {{ exif.gps.get('coordinates', 'N/A') }}
+        </p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Device Information -->
+  <div class="exif-category">
+    <h4 class="exif-category-title">
+      <span class="exif-category-icon">📱</span> DEVICE
+    </h4>
+    <div class="exif-table">
+      {% if exif.device %}
+        {% for key, value in exif.device.items() %}
+        <div class="exif-row">
+          <span class="exif-label">{{ key }}</span>
+          <span class="exif-value">{{ value }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="exif-row">
+          <span class="exif-value text-muted">No device information available</span>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Capture Information -->
+  <div class="exif-category">
+    <h4 class="exif-category-title">
+      <span class="exif-category-icon">📸</span> CAPTURE
+    </h4>
+    <div class="exif-table">
+      {% if exif.capture %}
+        {% for key, value in exif.capture.items() %}
+        <div class="exif-row">
+          <span class="exif-label">{{ key }}</span>
+          <span class="exif-value">{{ value }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="exif-row">
+          <span class="exif-value text-muted">No capture information available</span>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- GPS Information -->
+  <div class="exif-category">
+    <h4 class="exif-category-title">
+      <span class="exif-category-icon">🌍</span> GPS
+    </h4>
+    <div class="exif-table">
+      {% if exif.gps %}
+        {% for key, value in exif.gps.items() %}
+        {% if key != 'coordinates' %}
+        <div class="exif-row">
+          <span class="exif-label">{{ key }}</span>
+          <span class="exif-value">{{ value }}</span>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% if exif.gps.get('coordinates') %}
+        <div class="exif-row">
+          <span class="exif-label">Coordinates</span>
+          <span class="exif-value" style="color: #ffc107;">{{ exif.gps.coordinates }}</span>
+        </div>
+        {% endif %}
+      {% else %}
+        <div class="exif-row">
+          <span class="exif-value text-muted">No GPS information available</span>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Software Information -->
+  <div class="exif-category">
+    <h4 class="exif-category-title">
+      <span class="exif-category-icon">💻</span> SOFTWARE
+    </h4>
+    <div class="exif-table">
+      {% if exif.software %}
+        {% for key, value in exif.software.items() %}
+        <div class="exif-row">
+          <span class="exif-label">{{ key }}</span>
+          <span class="exif-value">{{ value }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="exif-row">
+          <span class="exif-value text-muted">No software information available</span>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- File Information -->
+  <div class="exif-category">
+    <h4 class="exif-category-title">
+      <span class="exif-category-icon">📄</span> FILE INFO
+    </h4>
+    <div class="exif-table">
+      <div class="exif-row">
+        <span class="exif-label">File Name</span>
+        <span class="exif-value">{{ exif.file_info.filename }}</span>
+      </div>
+      <div class="exif-row">
+        <span class="exif-label">File Size</span>
+        <span class="exif-value">{{ (exif.file_info.size / 1024)|round(2) }} KB</span>
+      </div>
+      <div class="exif-row">
+        <span class="exif-label">Dimensions</span>
+        <span class="exif-value">{{ exif.file_info.dimensions }}</span>
+      </div>
+      <div class="exif-row">
+        <span class="exif-label">Color Mode</span>
+        <span class="exif-value">{{ exif.file_info.mode }}</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</div>
+{% endif %}
+
+<!-- ============================================================
+     ACTION BUTTONS
+============================================================ -->
+<div class="mt-4" style="display: flex; gap: 1rem;">
+  <button class="btn btn-primary btn-pulse" id="runAnalysisBtn" disabled>
+    <span class="btn-icon">⚡</span>
+    RUN ANALYSIS
+  </button>
+  <button class="btn btn-danger" id="clearBtn">
+    <span class="btn-icon">✕</span>
+    CLEAR
+  </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Upload box interaction
+  const uploadBox = document.getElementById('uploadBox');
+  const fileInput = document.getElementById('fileInput');
+  const runAnalysisBtn = document.getElementById('runAnalysisBtn');
+  const uploadForm = document.getElementById('uploadForm');
+
+  uploadBox.addEventListener('click', () => fileInput.click());
+
+  uploadBox.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadBox.classList.add('dragover');
+  });
+
+  uploadBox.addEventListener('dragleave', () => {
+    uploadBox.classList.remove('dragover');
+  });
+
+  uploadBox.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadBox.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      fileInput.files = files;
+      runAnalysisBtn.disabled = false;
+    }
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+      runAnalysisBtn.disabled = false;
+    }
+  });
+
+  // Run analysis button - submit form
+  runAnalysisBtn.addEventListener('click', () => {
+    if (fileInput.files.length > 0) {
+      uploadForm.submit();
+    }
+  });
+
+  // Clear button
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    fileInput.value = '';
+    runAnalysisBtn.disabled = true;
+    window.location.href = '{{ url_for("image_forensics") }}';
+  });
+
+  // Auto-scroll to results if present
+  {% if results %}
+  document.addEventListener('DOMContentLoaded', () => {
+    const resultsDiv = document.getElementById('analysisResults');
+    if (resultsDiv) {
+      resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Cache results in localStorage for report generation
+    const imageData = {
+      filename: {{ results.filename | tojson }},
+      lsb_analysis: {{ results.lsb_analysis | tojson }},
+      exif_data: {{ results.exif_data | tojson }}
+    };
+    localStorage.setItem('cyfor_image', JSON.stringify(imageData));
+    console.log('Image forensics results cached for report generation');
+  });
+  {% endif %}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Badge Styles */
+  .badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .badge-clean {
+    background: rgba(0, 255, 157, 0.15);
+    color: #00ff9d;
+    border: 1px solid #00ff9d;
+  }
+
+  .badge-suspicious {
+    background: rgba(255, 77, 109, 0.15);
+    color: #ff4d6d;
+    border: 1px solid #ff4d6d;
+  }
+
+  /* Bit Bar Styles */
+  .bit-bar-container {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .bit-bar {
+    display: flex;
+    height: 24px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+  }
+
+  .bit-segment {
+    height: 100%;
+    transition: width 0.3s ease;
+  }
+
+  .bit-segment.zeros {
+    background: #00ff9d;
+  }
+
+  .bit-segment.ones {
+    background: #ff4d6d;
+  }
+
+  .bit-legend {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+  }
+
+  .bit-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #8892b0;
+  }
+
+  .bit-legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+  }
+
+  /* Entropy Bar Styles */
+  .entropy-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .entropy-label {
+    width: 60px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #8892b0;
+    text-transform: uppercase;
+  }
+
+  .entropy-bar-container {
+    flex: 1;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .entropy-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.5s ease;
+  }
+
+  .entropy-value {
+    width: 50px;
+    text-align: right;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ccd6f6;
+  }
+
+  /* EXIF Table Styles */
+  .exif-category {
+    margin-bottom: 1.5rem;
+  }
+
+  .exif-category:last-child {
+    margin-bottom: 0;
+  }
+
+  .exif-category-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #00ff9d;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(0, 255, 157, 0.2);
+  }
+
+  .exif-category-icon {
+    font-size: 1rem;
+  }
+
+  .exif-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .exif-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+    border-left: 2px solid transparent;
+  }
+
+  .exif-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-left-color: #00ff9d;
+  }
+
+  .exif-label {
+    color: #8892b0;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .exif-value {
+    color: #ccd6f6;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: right;
+    max-width: 60%;
+    word-break: break-word;
+  }
+
+  .text-muted {
+    color: #5a6a8a !important;
+    font-style: italic;
+  }
+
+  /* Error Panel */
+  .error-panel {
+    background: rgba(255, 77, 109, 0.1);
+    border: 1px solid #ff4d6d;
+  }
+
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #ff4d6d;
+  }
+
+  .error-icon {
+    font-size: 1.25rem;
+  }
+
+  /* Upload box dragover state */
+  .upload-box.dragover {
+    border-color: #00ff9d;
+    background: rgba(0, 255, 157, 0.05);
+  }
+</style>
+{% endblock %}

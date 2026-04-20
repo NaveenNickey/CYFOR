@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Integrity Check{% endblock %}
+
+{% block header_title %}Integrity Check{% endblock %}
+
+{% block content %}
+<!-- ============================================================
+     PAGE HEADER
+============================================================ -->
+<div class="page-header">
+  <h1 class="page-title">
+    <span class="page-title-icon">⬗</span>
+    File Integrity & Signature Analysis
+  </h1>
+  <p class="page-subtitle">Compute cryptographic hashes and validate file signatures</p>
+</div>
+
+<!-- ============================================================
+     FILE UPLOAD SECTION
+============================================================ -->
+<form action="{{ url_for('integrity') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+  <div class="upload-box" id="uploadBox">
+    <div class="upload-box-icon">⬗</div>
+    <h3 class="upload-box-title">Upload File for Analysis</h3>
+    <p class="upload-box-desc">Drag and drop a file here or click to browse</p>
+    <input type="file" name="file" class="upload-input" id="fileInput">
+    <p class="selected-filename" id="selectedFilename" style="display: none; margin-top: 1rem; color: var(--accent-primary); font-family: var(--font-code);"></p>
+  </div>
+
+  <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+    <button type="submit" class="btn btn-primary btn-pulse" id="runAnalysisBtn" disabled>
+      <span class="btn-icon">⚡</span>
+      RUN ANALYSIS
+    </button>
+    <button type="button" class="btn btn-danger" id="clearBtn">
+      <span class="btn-icon">✕</span>
+      CLEAR / NEW ANALYSIS
+    </button>
+  </div>
+</form>
+
+<!-- ============================================================
+     ERROR MESSAGE
+============================================================ -->
+{% if error %}
+<div class="card mt-4" style="border-color: var(--accent-secondary);">
+  <div class="card-header" style="border-color: var(--accent-secondary);">
+    <span class="card-icon" style="color: var(--accent-secondary);">⚠</span>
+    <span class="card-title" style="color: var(--accent-secondary);">Analysis Error</span>
+  </div>
+  <p style="color: var(--text-secondary);">{{ error }}</p>
+</div>
+{% endif %}
+
+<!-- ============================================================
+     RESULTS SECTION (shown only when results exist)
+============================================================ -->
+{% if results %}
+<div id="resultsSection">
+
+  <!-- FILE METADATA PANEL -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <span class="card-icon">📁</span>
+      <span class="card-title">FILE METADATA</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
+      <div class="status-item">
+        <div class="status-label">Filename</div>
+        <div class="status-value" style="font-size: 1rem; margin-top: 0.5rem;">{{ results.filename }}</div>
+      </div>
+      <div class="status-item">
+        <div class="status-label">Size (KB)</div>
+        <div class="status-value" style="font-size: 1.5rem; margin-top: 0.5rem;">{{ results.size_kb }}</div>
+      </div>
+      <div class="status-item">
+        <div class="status-label">Size (MB)</div>
+        <div class="status-value" style="font-size: 1.5rem; margin-top: 0.5rem;">{{ results.size_mb }}</div>
+      </div>
+      <div class="status-item">
+        <div class="status-label">Analyzed At</div>
+        <div class="status-value" style="font-size: 0.9rem; margin-top: 0.5rem;">{{ results.timestamp }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HASH RESULTS PANEL -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <span class="card-icon">📋</span>
+      <span class="card-title">CRYPTOGRAPHIC HASHES</span>
+    </div>
+
+    <!-- MD5 -->
+    <div class="form-group">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <label class="form-label" style="margin: 0;">
+          MD5 <span class="badge badge-low" style="font-size: 0.65rem; margin-left: 0.5rem;">WEAK - Legacy/Quick Check</span>
+        </label>
+        <span class="text-muted" style="font-size: 0.8rem;" data-tooltip="MD5 produces a 128-bit hash. Fast but vulnerable to collisions. Used for quick integrity checks, not security.">ℹ Uses</span>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <input type="text" class="form-input" value="{{ results.md5 }}" readonly id="md5Hash"
+               style="flex: 1; font-family: var(--font-code); color: var(--accent-primary);">
+        <button type="button" class="btn btn-primary" onclick="copyToClipboard('md5Hash')">
+          <span class="btn-icon">📋</span> COPY
+        </button>
+      </div>
+    </div>
+
+    <!-- SHA-1 -->
+    <div class="form-group">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <label class="form-label" style="margin: 0;">
+          SHA-1 <span class="badge badge-medium" style="font-size: 0.65rem; margin-left: 0.5rem; background: rgba(255, 176, 32, 0.15); color: var(--accent-warning); border-color: var(--accent-warning);">MODERATE - Deprecated for Security</span>
+        </label>
+        <span class="text-muted" style="font-size: 0.8rem;" data-tooltip="SHA-1 produces a 160-bit hash. Theoretically broken but still used in some legacy systems.">ℹ Uses</span>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <input type="text" class="form-input" value="{{ results.sha1 }}" readonly id="sha1Hash"
+               style="flex: 1; font-family: var(--font-code); color: var(--accent-primary);">
+        <button type="button" class="btn btn-primary" onclick="copyToClipboard('sha1Hash')">
+          <span class="btn-icon">📋</span> COPY
+        </button>
+      </div>
+    </div>
+
+    <!-- SHA-256 -->
+    <div class="form-group">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <label class="form-label" style="margin: 0;">
+          SHA-256 <span class="badge badge-match" style="font-size: 0.65rem; margin-left: 0.5rem;">STRONG - Industry Standard</span>
+        </label>
+        <span class="text-muted" style="font-size: 0.8rem;" data-tooltip="SHA-256 produces a 256-bit hash. Currently considered cryptographically secure. Used in blockchain, certificates, and forensic evidence.">ℹ Uses</span>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <input type="text" class="form-input" value="{{ results.sha256 }}" readonly id="sha256Hash"
+               style="flex: 1; font-family: var(--font-code); color: var(--accent-primary);">
+        <button type="button" class="btn btn-primary" onclick="copyToClipboard('sha256Hash')">
+          <span class="btn-icon">📋</span> COPY
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MIME VALIDATION PANEL -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <span class="card-icon">🔍</span>
+      <span class="card-title">MIME TYPE VALIDATION</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.5rem; align-items: center; margin-bottom: 1.5rem;">
+      <!-- Declared Type -->
+      <div class="status-item">
+        <div class="status-label">Declared Type</div>
+        <div class="status-value" style="font-size: 1.5rem; margin-top: 0.5rem;">.{{ results.declared_ext }}</div>
+        <div class="text-muted" style="font-size: 0.85rem; margin-top: 0.5rem;">From filename</div>
+      </div>
+
+      <!-- Status Badge -->
+      <div style="text-align: center;">
+        {% if results.mime_status == 'MATCH' %}
+        <div class="badge badge-match" style="font-size: 1rem; padding: 0.75rem 1.5rem;">
+          ✓ MATCH
+        </div>
+        {% elif results.mime_status == 'MISMATCH' %}
+        <div class="badge badge-mismatch" style="font-size: 1rem; padding: 0.75rem 1.5rem;">
+          ⚠ MISMATCH
+        </div>
+        {% else %}
+        <div class="badge" style="font-size: 1rem; padding: 0.75rem 1.5rem; background: rgba(139, 148, 158, 0.15); color: var(--text-secondary); border-color: var(--text-muted);">
+          ? UNKNOWN
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Actual Type -->
+      <div class="status-item">
+        <div class="status-label">Actual Type</div>
+        <div class="status-value" style="font-size: 1.5rem; margin-top: 0.5rem;">.{{ results.actual_ext }}</div>
+        <div class="text-muted" style="font-size: 0.85rem; margin-top: 0.5rem;">{{ results.actual_mime }}</div>
+      </div>
+    </div>
+
+    <!-- Risk Level -->
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--bg-input); border-radius: 6px; margin-bottom: 1.5rem;">
+      <span class="form-label" style="margin: 0;">Risk Assessment</span>
+      {% if results.risk_level == 'LOW' %}
+      <span class="badge badge-low" style="font-size: 0.9rem; padding: 0.5rem 1rem;">LOW RISK</span>
+      {% elif results.risk_level == 'HIGH' %}
+      <span class="badge badge-high" style="font-size: 0.9rem; padding: 0.5rem 1rem;">HIGH RISK</span>
+      {% else %}
+      <span class="badge" style="font-size: 0.9rem; padding: 0.5rem 1rem; background: rgba(139, 148, 158, 0.15); color: var(--text-secondary); border-color: var(--text-muted);">MEDIUM RISK</span>
+      {% endif %}
+    </div>
+
+    <!-- Warning Box for Mismatch -->
+    {% if results.mime_status == 'MISMATCH' %}
+    <div class="card" style="border-color: var(--accent-secondary); background: rgba(255, 77, 109, 0.05);">
+      <div class="card-header" style="border-color: var(--accent-secondary);">
+        <span class="card-icon" style="color: var(--accent-secondary);">⚠</span>
+        <span class="card-title" style="color: var(--accent-secondary);">WARNING: FILE MASQUERADING DETECTED</span>
+      </div>
+      <p style="color: var(--text-secondary); line-height: 1.8;">
+        This file may be <strong>disguised</strong>. The filename declares it as
+        <strong style="color: var(--text-primary);">.{{ results.declared_ext }}</strong> but the actual
+        binary content (magic bytes) identifies it as <strong style="color: var(--text-primary);">.{{ results.actual_ext }}</strong>
+        ({{ results.actual_mime }}).
+      </p>
+      <p class="mt-2" style="color: var(--accent-secondary);">
+        <strong>Potential indicators:</strong> Malicious executable disguised as document,
+        script hidden as image, or file extension typo. Further analysis recommended.
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- Unknown Type Info -->
+    {% if results.mime_status == 'UNKNOWN' %}
+    <div class="card" style="border-color: var(--text-muted); background: rgba(139, 148, 158, 0.05);">
+      <div class="card-header" style="border-color: var(--text-muted);">
+        <span class="card-icon" style="color: var(--text-muted);">ℹ</span>
+        <span class="card-title" style="color: var(--text-muted);">UNABLE TO DETECT FILE TYPE</span>
+      </div>
+      <p style="color: var(--text-secondary); line-height: 1.8;">
+        The filetype library could not identify this file's magic bytes. This may indicate:
+      </p>
+      <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-top: 0.5rem; line-height: 1.8;">
+        <li>A plain text file (no magic bytes)</li>
+        <li>A corrupted or truncated file</li>
+        <li>A file format not recognized by the detection library</li>
+        <li>Intentionally obfuscated content</li>
+      </ul>
+      <p class="mt-2" style="color: var(--accent-warning);">
+        <strong>Recommendation:</strong> Use Hex Viewer module for manual inspection.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="mt-4" style="display: flex; gap: 1rem;">
+    <a href="{{ url_for('integrity') }}" class="btn btn-primary">
+      <span class="btn-icon">↻</span>
+      NEW ANALYSIS
+    </a>
+    <a href="{{ url_for('report') }}" class="btn btn-info">
+      <span class="btn-icon">📄</span>
+      ADD TO REPORT
+    </a>
+  </div>
+
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Upload box interaction
+  const uploadBox = document.getElementById('uploadBox');
+  const fileInput = document.getElementById('fileInput');
+  const runAnalysisBtn = document.getElementById('runAnalysisBtn');
+  const selectedFilename = document.getElementById('selectedFilename');
+
+  uploadBox.addEventListener('click', () => fileInput.click());
+
+  uploadBox.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadBox.classList.add('dragover');
+  });
+
+  uploadBox.addEventListener('dragleave', () => {
+    uploadBox.classList.remove('dragover');
+  });
+
+  uploadBox.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadBox.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      fileInput.files = files;
+      showFilename(files[0].name);
+    }
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+      showFilename(fileInput.files[0].name);
+    }
+  });
+
+  function showFilename(name) {
+    runAnalysisBtn.disabled = false;
+    selectedFilename.textContent = 'Selected: ' + name;
+    selectedFilename.style.display = 'block';
+  }
+
+  // Clear button
+  document.getElementById('clearBtn').addEventListener('click', function() {
+    fileInput.value = '';
+    selectedFilename.style.display = 'none';
+    runAnalysisBtn.disabled = true;
+  });
+
+  // Copy to clipboard function
+  function copyToClipboard(elementId) {
+    const input = document.getElementById(elementId);
+    input.select();
+    input.setSelectionRange(0, 99999); // Mobile support
+
+    navigator.clipboard.writeText(input.value).then(function() {
+      // Show temporary success feedback
+      const btn = event.target.closest('button');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="btn-icon">✓</span> COPIED!';
+      btn.classList.add('btn-success');
+
+      setTimeout(function() {
+        btn.innerHTML = originalText;
+        btn.classList.remove('btn-success');
+      }, 2000);
+    }).catch(function(err) {
+      alert('Failed to copy: ' + err);
+    });
+  }
+
+  // Scroll to results if they exist
+  {% if results %}
+  document.addEventListener('DOMContentLoaded', function() {
+    const resultsSection = document.getElementById('resultsSection');
+    if (resultsSection) {
+      resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Cache results in localStorage for report generation
+    const integrityData = {
+      filename: {{ results.filename | tojson }},
+      size_kb: {{ results.size_kb }},
+      size_mb: {{ results.size_mb }},
+      timestamp: {{ results.timestamp | tojson }},
+      md5: {{ results.md5 | tojson }},
+      sha1: {{ results.sha1 | tojson }},
+      sha256: {{ results.sha256 | tojson }},
+      declared_ext: {{ results.declared_ext | tojson }},
+      actual_mime: {{ results.actual_mime | tojson }},
+      actual_ext: {{ results.actual_ext | tojson }},
+      mime_status: {{ results.mime_status | tojson }},
+      risk_level: {{ results.risk_level | tojson }},
+      magic_bytes: {{ results.magic_bytes | tojson }}
+    };
+    localStorage.setItem('cyfor_integrity', JSON.stringify(integrityData));
+    console.log('Integrity results cached for report generation');
+  });
+  {% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,604 @@
+{% extends "base.html" %}
+
+{% block title %}Hex Viewer{% endblock %}
+
+{% block header_title %}Hex Viewer{% endblock %}
+
+{% block content %}
+<!-- ============================================================
+     PAGE HEADER
+============================================================ -->
+<div class="page-header">
+  <h1 class="page-title">
+    <span class="page-title-icon">▣</span>
+    Hex Dump Viewer
+  </h1>
+  <p class="page-subtitle">Low-level binary data inspection and string extraction</p>
+</div>
+
+<!-- ============================================================
+     FILE UPLOAD SECTION
+============================================================ -->
+<form action="{{ url_for('hex_viewer') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+  <div class="upload-box" id="uploadBox">
+    <div class="upload-box-icon">▣</div>
+    <h3 class="upload-box-title">Upload File for Hex Analysis</h3>
+    <p class="upload-box-desc">Any binary or text file supported</p>
+    <input type="file" name="file" class="upload-input" id="fileInput">
+    <div class="file-info" id="fileInfo" style="display: none;">
+      <span class="file-info-name" id="fileName"></span>
+      <span class="file-info-size" id="fileSize"></span>
+    </div>
+  </div>
+</form>
+
+<!-- ============================================================
+     ERROR MESSAGE
+============================================================ -->
+{% if error %}
+<div class="result-panel mt-4 error-panel">
+  <div class="error-message">
+    <span class="error-icon">⚠</span>
+    <span>{{ error }}</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============================================================
+     ANALYSIS RESULTS
+============================================================ -->
+{% if results %}
+<div id="analysisResults">
+
+<!-- ============================================================
+     FILE SUMMARY PANEL
+============================================================ -->
+<div class="result-panel mt-4">
+  <div class="result-panel-header">
+    <span class="result-panel-title">📄 FILE SUMMARY</span>
+  </div>
+
+  <div class="file-summary-grid">
+    <div class="summary-item">
+      <span class="summary-label">Filename</span>
+      <span class="summary-value">{{ results.filename }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Total Size</span>
+      <span class="summary-value">{{ (results.file_size / 1024)|round(2) }} KB ({{ results.file_size }} bytes)</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Bytes Read</span>
+      <span class="summary-value">{{ results.bytes_read }} bytes</span>
+    </div>
+  </div>
+
+  <div class="magic-bytes-box">
+    <div class="magic-bytes-header">
+      <span class="magic-label">MAGIC BYTES</span>
+      <span class="magic-type" id="magicType">{{ results.file_type }}</span>
+    </div>
+    <div class="magic-bytes-value">{{ results.file_magic }}</div>
+  </div>
+</div>
+
+<!-- ============================================================
+     HEX DUMP PANEL
+============================================================ -->
+<div class="hex-viewer mt-4" id="hexViewer">
+  <div class="hex-panel-header">
+    <span class="hex-panel-title">HEX DUMP — First 512 Bytes</span>
+  </div>
+
+  <div class="hex-grid" id="hexGrid">
+    <!-- Header Row -->
+    <div class="hex-row hex-header">
+      <div class="hex-offset">OFFSET</div>
+      <div class="hex-bytes">00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F</div>
+      <div class="hex-ascii">ASCII</div>
+    </div>
+
+    <!-- Hex Data Rows -->
+    {% for row in results.hex_rows %}
+    <div class="hex-row {% if loop.index is even %}hex-row-alt{% endif %}">
+      <div class="hex-offset">{{ row.offset }}</div>
+      <div class="hex-bytes">{{ row.hex }}</div>
+      <div class="hex-ascii">{{ row.ascii }}</div>
+    </div>
+    {% endfor %}
+
+    {% if results.bytes_read < 512 %}
+    <div class="hex-row hex-row-alt" style="color: #5a6a8a; font-style: italic;">
+      <div class="hex-offset">--------</div>
+      <div class="hex-bytes">[End of file - {{ results.bytes_read }} bytes total]</div>
+      <div class="hex-ascii"></div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ============================================================
+     STRING EXTRACTION PANEL
+============================================================ -->
+<div class="strings-section mt-4">
+  <div class="result-panel-header">
+    <span class="result-panel-title">📝 EXTRACTED STRINGS</span>
+    <span class="strings-count">{{ results.total_strings }} strings extracted</span>
+  </div>
+
+  <div class="strings-grid">
+    <!-- Interesting Strings (Left) -->
+    <div class="strings-column interesting-column">
+      <h4 class="strings-column-title">
+        <span class="title-icon">⚠</span> INTERESTING STRINGS
+      </h4>
+
+      <div class="strings-list" style="max-height: 400px; overflow-y: auto;">
+        {% if results.interesting_strings %}
+          {% for item in results.interesting_strings %}
+          <div class="string-item interesting-item">
+            <span class="string-value">{{ item.value }}</span>
+            <span class="reason-badge">{{ item.reason }}</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="string-empty">No suspicious strings found</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Regular Strings (Right) -->
+    <div class="strings-column regular-column">
+      <h4 class="strings-column-title">
+        <span class="title-icon">✓</span> EXTRACTED STRINGS
+      </h4>
+
+      <div class="strings-list" style="max-height: 400px; overflow-y: auto;">
+        {% if results.regular_strings %}
+          {% for s in results.regular_strings %}
+          <div class="string-item regular-item">{{ s }}</div>
+          {% endfor %}
+        {% else %}
+          <div class="string-empty">No readable strings found</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+{% endif %}
+
+<!-- ============================================================
+     ACTION BUTTONS
+============================================================ -->
+<div class="mt-4" style="display: flex; gap: 1rem;">
+  <button class="btn btn-primary btn-pulse" id="runAnalysisBtn" disabled>
+    <span class="btn-icon">⚡</span>
+    ANALYZE FILE
+  </button>
+  <button class="btn btn-danger" id="clearBtn">
+    <span class="btn-icon">✕</span>
+    CLEAR
+  </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Upload box interaction
+  const uploadBox = document.getElementById('uploadBox');
+  const fileInput = document.getElementById('fileInput');
+  const runAnalysisBtn = document.getElementById('runAnalysisBtn');
+  const uploadForm = document.getElementById('uploadForm');
+  const fileInfo = document.getElementById('fileInfo');
+  const fileName = document.getElementById('fileName');
+  const fileSize = document.getElementById('fileSize');
+
+  uploadBox.addEventListener('click', (e) => {
+    if (e.target !== fileInput) {
+      fileInput.click();
+    }
+  });
+
+  uploadBox.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadBox.classList.add('dragover');
+  });
+
+  uploadBox.addEventListener('dragleave', () => {
+    uploadBox.classList.remove('dragover');
+  });
+
+  uploadBox.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadBox.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      fileInput.files = files;
+      handleFileSelect(files[0]);
+    }
+  });
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+      handleFileSelect(fileInput.files[0]);
+    }
+  });
+
+  function handleFileSelect(file) {
+    runAnalysisBtn.disabled = false;
+    fileInfo.style.display = 'block';
+    fileName.textContent = file.name;
+    fileSize.textContent = formatFileSize(file.size);
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+
+  // Run analysis button - submit form
+  runAnalysisBtn.addEventListener('click', () => {
+    if (fileInput.files.length > 0) {
+      uploadForm.submit();
+    }
+  });
+
+  // Clear button
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    fileInput.value = '';
+    runAnalysisBtn.disabled = true;
+    fileInfo.style.display = 'none';
+    window.location.href = '{{ url_for("hex_viewer") }}';
+  });
+
+  // Auto-scroll to results if present
+  {% if results %}
+  document.addEventListener('DOMContentLoaded', () => {
+    const resultsDiv = document.getElementById('analysisResults');
+    if (resultsDiv) {
+      resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Cache results in localStorage for report generation
+    const hexData = {
+      filename: {{ results.filename | tojson }},
+      file_size: {{ results.file_size }},
+      bytes_read: {{ results.bytes_read }},
+      hex_rows: {{ results.hex_rows | tojson }},
+      interesting_strings: {{ results.interesting_strings | tojson }},
+      regular_strings: {{ results.regular_strings | tojson }},
+      total_strings: {{ results.total_strings }},
+      file_magic: {{ results.file_magic | tojson }},
+      file_type: {{ results.file_type | tojson }}
+    };
+    localStorage.setItem('cyfor_hex', JSON.stringify(hexData));
+    console.log('Hex viewer results cached for report generation');
+  });
+  {% endif %}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* File Info Display */
+  .file-info {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 255, 157, 0.1);
+    border: 1px solid rgba(0, 255, 157, 0.3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .file-info-name {
+    color: #00ff9d;
+    font-weight: 600;
+  }
+
+  .file-info-size {
+    color: #8892b0;
+    font-size: 0.85rem;
+  }
+
+  /* File Summary Panel */
+  .file-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+    border-left: 2px solid #00ff9d;
+  }
+
+  .summary-label {
+    color: #8892b0;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .summary-value {
+    color: #ccd6f6;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  /* Magic Bytes Box */
+  .magic-bytes-box {
+    background: linear-gradient(135deg, rgba(0, 255, 157, 0.08) 0%, rgba(0, 0, 0, 0.3) 100%);
+    border: 1px solid rgba(0, 255, 157, 0.3);
+    border-radius: 6px;
+    padding: 1.25rem;
+    margin-top: 1rem;
+  }
+
+  .magic-bytes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .magic-label {
+    color: #00ff9d;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .magic-type {
+    color: #ccd6f6;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    background: rgba(0, 255, 157, 0.15);
+    border-radius: 4px;
+    border: 1px solid rgba(0, 255, 157, 0.3);
+  }
+
+  .magic-bytes-value {
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #00ff9d;
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px rgba(0, 255, 157, 0.5);
+  }
+
+  /* Hex Viewer Panel */
+  .hex-panel-header {
+    padding: 0.75rem 1rem;
+    background: rgba(0, 255, 157, 0.1);
+    border-bottom: 1px solid rgba(0, 255, 157, 0.2);
+    border-radius: 4px 4px 0 0;
+  }
+
+  .hex-panel-title {
+    color: #00ff9d;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .hex-viewer {
+    background: #0a0a0a;
+    border: 1px solid #1a1a2e;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .hex-grid {
+    padding: 1rem;
+    overflow-x: auto;
+  }
+
+  .hex-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 150px;
+    gap: 1.5rem;
+    padding: 0.5rem 0;
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  .hex-row:last-child {
+    border-bottom: none;
+  }
+
+  .hex-row-alt {
+    background: rgba(255, 255, 255, 0.02);
+    margin: 0 -1rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .hex-header {
+    border-bottom: 2px solid rgba(0, 255, 157, 0.3);
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .hex-offset {
+    color: #5a6a8a;
+    font-weight: 600;
+  }
+
+  .hex-bytes {
+    color: #00ff9d;
+    letter-spacing: 2px;
+    position: relative;
+  }
+
+  .hex-bytes::after {
+    content: '';
+    position: absolute;
+    left: 49%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 70%;
+    background: rgba(0, 255, 157, 0.2);
+  }
+
+  .hex-ascii {
+    color: #ffd93d;
+    font-weight: 500;
+  }
+
+  /* Strings Section */
+  .strings-section {
+    margin-top: 2rem;
+  }
+
+  .strings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  @media (max-width: 900px) {
+    .strings-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .strings-column {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .interesting-column {
+    border-left: 3px solid #ff9f4d;
+  }
+
+  .regular-column {
+    border-left: 3px solid #00ff9d;
+  }
+
+  .strings-column-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #ccd6f6;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .title-icon {
+    font-size: 1rem;
+  }
+
+  .interesting-column .strings-column-title {
+    color: #ff9f4d;
+  }
+
+  .regular-column .strings-column-title {
+    color: #00ff9d;
+  }
+
+  .strings-count {
+    color: #8892b0;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .strings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .string-item {
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    word-break: break-all;
+  }
+
+  .interesting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    border-left: 2px solid #ff9f4d;
+  }
+
+  .interesting-item .string-value {
+    color: #ffd93d;
+    flex: 1;
+  }
+
+  .interesting-item .reason-badge {
+    color: #ff9f4d;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.2rem 0.5rem;
+    background: rgba(255, 159, 77, 0.15);
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  .regular-item {
+    color: #8892b0;
+    border-left: 2px solid rgba(0, 255, 157, 0.3);
+  }
+
+  .string-empty {
+    color: #5a6a8a;
+    font-style: italic;
+    text-align: center;
+    padding: 2rem 1rem;
+  }
+
+  /* Upload box dragover state */
+  .upload-box.dragover {
+    border-color: #00ff9d;
+    background: rgba(0, 255, 157, 0.05);
+  }
+
+  /* Error Panel */
+  .error-panel {
+    background: rgba(255, 77, 109, 0.1);
+    border: 1px solid #ff4d6d;
+  }
+
+  .error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #ff4d6d;
+  }
+
+  .error-icon {
+    font-size: 1.25rem;
+  }
+</style>
+{% endblock %}
